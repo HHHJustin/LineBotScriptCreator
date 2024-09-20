@@ -1,0 +1,427 @@
+basePath: /
+info:
+  contact: {}
+  description: This is a sample server for Line Bot API.
+  title: Line Bot API
+  version: "1.0"
+paths:
+  /messages/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Create a new message associated with a given node
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: Message Type
+        in: formData
+        name: messageType
+        required: true
+        type: string
+      - description: Message Content
+        in: formData
+        name: messageContent
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Created message
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Node is wrong type
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update node
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new message for a specific node
+      tags:
+      - messages
+  /messages/delete:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Delete a specific message associated with a node using its ID
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: Message ID
+        in: formData
+        name: messageId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: node object after deletion
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Message does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to delete message
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a message by ID
+      tags:
+      - messages
+  /messages/update:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Update the content of a specific message using its ID
+      parameters:
+      - description: Message ID
+        in: formData
+        name: messageId
+        required: true
+        type: integer
+      - description: New Message Content
+        in: formData
+        name: newMessageContent
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated message
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Message ID does not exist in node range
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update message
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a message by ID
+      tags:
+      - messages
+  /nodes/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Create a new node with the specified type and range
+      parameters:
+      - description: nodeTitle for the Node
+        in: formData
+        name: nodeTitle
+        required: true
+        type: string
+      - description: nodeType for the Node
+        in: formData
+        name: nodeType
+        required: true
+        type: string
+      - description: Location for the Node
+        in: formData
+        name: location
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created Node
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Create Node fail
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new node
+      tags:
+      - nodes
+  /nodes/delete:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Delete a new node with the specified ID
+      parameters:
+      - description: nodeID for the Node
+        in: formData
+        name: nodeId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully delete Node
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Delete Node fail
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a new node
+      tags:
+      - nodes
+  /nodes/next:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Update the next node ID for the specified node
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: Next Node ID
+        in: formData
+        name: nodeNext
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated node
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Node is not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update node
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update the next node of a specific node
+      tags:
+      - nodes
+  /nodes/previous:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Update the previous node ID for the specified node
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: Previous Node ID
+        in: formData
+        name: nodePrevious
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated node
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Node is not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update node
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update the previous node of a specific node
+      tags:
+      - nodes
+  /nodes/title:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Update the title for the specified node
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: New Node Title
+        in: formData
+        name: nodeTitle
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated node
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Node is not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update node
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update the title of a specific node
+      tags:
+      - nodes
+  /quickreplies/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Create a new quick reply associated with a given node
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: Button Name
+        in: formData
+        name: buttonName
+        required: true
+        type: string
+      - description: Reply Content
+        in: formData
+        name: reply
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Quick reply created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Node is wrong type
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update node
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new quick reply for a specific node
+      tags:
+      - quickreplies
+  /quickreplies/delete:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Delete a specific quick reply associated with a node using its
+        ID
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: Quick Reply ID
+        in: formData
+        name: quickReplyId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Node updated successfully after deleting quick reply
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: QuickReply does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update node
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a quick reply by ID
+      tags:
+      - quickreplies
+  /quickreplies/update:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Update the button name and reply content of a specific quick reply
+        associated with a node
+      parameters:
+      - description: Node ID
+        in: formData
+        name: nodeId
+        required: true
+        type: integer
+      - description: Quick Reply ID
+        in: formData
+        name: quickReplyId
+        required: true
+        type: integer
+      - description: New Button Name
+        in: formData
+        name: newButtonName
+        required: true
+        type: string
+      - description: New Reply Content
+        in: formData
+        name: newReply
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Quick reply updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: QuickReply does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to update quick reply
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a quick reply by ID
+      tags:
+      - quickreplies
+swagger: "2.0"

@@ -1,0 +1,91 @@
+package main
+
+import (
+	"LineBotCreator/api"
+	db "LineBotCreator/database"
+	"LineBotCreator/utils"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	_ "LineBotCreator/docs"
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+)
+
+// @title Line Bot API
+// @version 1.0
+// @description This is a sample server for Line Bot API.
+// @BasePath /
+func main() {
+	bot := utils.ConnectLineBot()
+	db := db.Connect()
+	router := gin.Default()
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	templatesPath := filepath.Join(cwd, "..", "frontend", "templates", "*")
+	staticPath := filepath.Join(cwd, "..", "frontend", "static")
+	router.LoadHTMLGlob(templatesPath)
+	router.Static("/assets", staticPath)
+	router.POST("/callback", func(c *gin.Context) {
+		api.CallbackHandler(c, bot, db)
+	})
+
+	// Node
+	nodeRouter := router.Group("/nodes")
+	nodeRouter.POST("/create", func(c *gin.Context) {
+		api.CreateNodeHandler(c, db)
+	})
+	nodeRouter.GET("/get", func(c *gin.Context) {
+		api.ReadNodeHandler(c, db)
+	})
+	nodeRouter.GET("/read", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "nodes.html", nil)
+	})
+	nodeRouter.POST("/previous", func(c *gin.Context) {
+		api.UpdateNodePreviousHandler(c, db)
+	})
+	nodeRouter.POST("/next", func(c *gin.Context) {
+		api.UpdateNodeNextHandler(c, db)
+	})
+	nodeRouter.POST("/title", func(c *gin.Context) {
+		api.UpdateNodeTitleHandler(c, db)
+	})
+	nodeRouter.POST("/delete", func(c *gin.Context) {
+		api.DeleteNodeHandler(c, db)
+	})
+
+	// Message
+	messageRouter := router.Group("/messages")
+	messageRouter.POST("/create", func(c *gin.Context) {
+		api.CreateMessageHandler(c, db)
+	})
+	messageRouter.POST("/update", func(c *gin.Context) {
+		api.UpdateMessageHandler(c, db)
+	})
+	messageRouter.POST("/delete", func(c *gin.Context) {
+		api.DeleteMessageHandler(c, db)
+	})
+
+	// QuickReply
+	quickReplyRouter := router.Group("/quickreplies")
+	quickReplyRouter.POST("/create", func(c *gin.Context) {
+		api.CreateQuickReplyHandler(c, db)
+	})
+	quickReplyRouter.POST("/update", func(c *gin.Context) {
+		api.UpdateQuickReplyHandler(c, db)
+	})
+	quickReplyRouter.POST("/delete", func(c *gin.Context) {
+		api.DeleteQuickReplyHandler(c, db)
+	})
+	// Swagger ui
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if err := router.Run(":8080"); err != nil {
+		panic(err)
+	}
+}
