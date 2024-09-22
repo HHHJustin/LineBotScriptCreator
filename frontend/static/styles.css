@@ -1,0 +1,31 @@
+/* styles.css */
+
+/* 選單樣式 */
+#typeMenu {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    display: none;
+}
+
+#typeMenu div {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+#typeMenu button {
+    display: block;
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 5px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+#typeMenu button:hover {
+    background-color: #e0e0e0;
+}

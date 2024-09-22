@@ -1,0 +1,42 @@
+<!-- templates/nodes.html -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>GoJS Graph</title>
+  <script src="https://unpkg.com/gojs@2.1.52/release/go.js"></script>
+  <style>
+    body, html {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #myDiagramDiv {
+      flex: 1;
+      border: 1px solid black;
+      box-sizing: border-box;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GoJS Graph</h1>
+  </header>
+  <div id="myDiagramDiv"></div>
+
+  <script type="module"src="/assets/nodes.js"></script>
+</body>
+</html>
