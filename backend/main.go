@@ -30,6 +30,7 @@ func main() {
 	}
 	templatesPath := filepath.Join(cwd, "..", "frontend", "templates", "*")
 	staticPath := filepath.Join(cwd, "..", "frontend", "static")
+
 	router.LoadHTMLGlob(templatesPath)
 	router.Static("/assets", staticPath)
 	router.POST("/callback", func(c *gin.Context) {
@@ -38,9 +39,6 @@ func main() {
 
 	// Node
 	nodeRouter := router.Group("/nodes")
-	nodeRouter.POST("/create", func(c *gin.Context) {
-		api.CreateNodeHandler(c, db)
-	})
 	nodeRouter.GET("/get", func(c *gin.Context) {
 		api.ReadNodeHandler(c, db)
 	})
@@ -59,6 +57,18 @@ func main() {
 	nodeRouter.POST("/delete", func(c *gin.Context) {
 		api.DeleteNodeHandler(c, db)
 	})
+	newNodeRouter := nodeRouter.Group("/create").Use(func(c *gin.Context) {
+		api.CreateNodeMiddleware(c)
+	})
+	newNodeRouter.POST("/next", func(c *gin.Context) {
+		api.CreateNextNodeHandler(c, db)
+	})
+	newNodeRouter.POST("/previous", func(c *gin.Context) {
+		api.CreatePreviousNodeHandler(c, db)
+	})
+	// newNodeRouter.POST("/branch", func(c *gin.Context) {
+	// 	api.CreateNextNodeHandler(c, db)
+	// })
 
 	// Message
 	messageRouter := router.Group("/messages")

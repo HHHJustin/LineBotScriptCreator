@@ -2,6 +2,7 @@ package api
 
 import (
 	"LineBotCreator/database"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -9,35 +10,106 @@ import (
 	"gorm.io/gorm"
 )
 
-// CreateNode godoc
-// @Summary Create a new node
-// @Description Create a new node with the specified type and range
-// @Tags nodes
-// @Accept x-www-form-urlencoded
-// @Produce json
-// @Param nodeTitle formData string true "nodeTitle for the Node"
-// @Param nodeType formData string true "nodeType for the Node"
-// @Param location formData string true "Location for the Node"
-// @Success 201 {object} map[string]interface{} "Successfully created Node"
-// @Failure 400 {object} map[string]interface{} "Create Node fail"
-// @Router /nodes/create [post]
-func CreateNodeHandler(c *gin.Context, db *gorm.DB) {
-	nodeTitle := c.PostForm("nodeTitle")
-	nodeType := c.PostForm("nodeType")
-	location := c.PostForm("location")
+func CreateNodeMiddleware(c *gin.Context) {
 	newNode := database.Node{
-		Title:        nodeTitle,
-		Type:         nodeType,
-		Range:        database.IntArray{},
-		PreviousNode: 0,
-		NextNode:     0,
-		Loc:          location,
+		Title: "New",
+		Range: database.IntArray{},
 	}
+	c.Set("node", newNode)
+	c.Next()
+}
 
-	if err := db.Create(&newNode).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Create Node fail"})
+func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) {
+	node, exists := c.Get("node")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node data not found"})
 		return
 	}
+	newNode := node.(database.Node)
+	var req database.NodeCreateRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		return
+	}
+	var currentNode database.Node
+	if err := db.Where("id = ?", req.CurrentNodeID).First(&currentNode).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
+		return
+	}
+	newNode.Type = req.NewNodeType
+	newNode.PreviousNode = currentNode.ID
+	newNode.NextNode = currentNode.NextNode
+	newNode.LocX = currentNode.LocX + 200
+	newNode.LocY = currentNode.LocY
+	if err := db.Create(&newNode).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create node"})
+		return
+	}
+	if currentNode.NextNode != 0 {
+		var nextNode database.Node
+		if err := db.Where("id = ?", currentNode.NextNode).First(&nextNode).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
+			return
+		}
+		nextNode.PreviousNode = newNode.ID
+		if err := db.Save(&nextNode).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
+			return
+		}
+	}
+	currentNode.NextNode = newNode.ID
+	if err := db.Save(&currentNode).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"Node": newNode})
+}
+
+func CreatePreviousNodeHandler(c *gin.Context, db *gorm.DB) {
+	node, exists := c.Get("node")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node data not found"})
+		return
+	}
+	newNode := node.(database.Node)
+	var req database.NodeCreateRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		return
+	}
+	var currentNode database.Node
+	if err := db.Where("id = ?", req.CurrentNodeID).First(&currentNode).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
+		return
+	}
+	newNode.Type = req.NewNodeType
+	newNode.PreviousNode = currentNode.PreviousNode
+	newNode.NextNode = req.CurrentNodeID
+	newNode.LocX = currentNode.LocX - 200
+	newNode.LocY = currentNode.LocY - 200
+	if err := db.Create(&newNode).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create node"})
+		return
+	}
+	if currentNode.PreviousNode != 0 {
+		var previousNode database.Node
+		if err := db.Where("id = ?", currentNode.PreviousNode).First(&previousNode).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
+			return
+		}
+		previousNode.NextNode = newNode.ID
+		if err := db.Save(&previousNode).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
+			return
+		}
+	}
+	currentNode.PreviousNode = newNode.ID
+	if err := db.Save(&currentNode).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"Node": newNode})
 }
 
@@ -52,11 +124,12 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) {
 		Links: []database.Link{},
 	}
 	for _, node := range nodes {
+		Loc := fmt.Sprintf("%d %d", node.LocX, node.LocY)
 		graph.Nodes = append(graph.Nodes, database.GraphNode{
 			Key:   node.ID,
 			Text:  node.Title,
 			Color: getColorByType(node.Type),
-			Loc:   node.Loc,
+			Loc:   Loc,
 		})
 		if node.NextNode != 0 {
 			graph.Links = append(graph.Links, database.Link{From: node.ID, To: node.NextNode})

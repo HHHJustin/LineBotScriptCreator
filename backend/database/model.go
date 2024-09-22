@@ -29,12 +29,18 @@ type Node struct {
 	Range        IntArray      `gorm:"type:jsonb;not null"`
 	PreviousNode int           `gorm:"index"`
 	NextNode     int           `gorm:"index"`
-	Loc          string        `gorm:"size:50;default:'0 0'" json:"loc"`
+	LocX         int           `gorm:"size:50;default:0" json:"locX"`
+	LocY         int           `gorm:"size:50;default:0" json:"locY"`
 	Messages     []Message     `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	QuickReplies []QuickReply  `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	KeyDecisions []KeyDecision `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	TagDecisions []TagDecision `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Randoms      []Random      `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+type NodeCreateRequest struct {
+	CurrentNodeID int    `json:"currentNodeID,omitempty"`
+	NewNodeType   string `json:"newNodeType" binding:"required"`
 }
 
 type Link struct {
