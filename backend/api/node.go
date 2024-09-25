@@ -261,13 +261,13 @@ func UpdateNodeTitleHandler(c *gin.Context, db *gorm.DB) {
 // @Failure 400 {object} map[string]interface{} "Delete Node fail"
 // @Router /nodes/delete [post]
 func DeleteNodeHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodeId format"})
+	var req database.NodeDeleteRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
+	nodeIdInt := req.CurrentNodeID
+	var node database.Node
 	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return

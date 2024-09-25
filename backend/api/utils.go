@@ -2,14 +2,18 @@ package api
 
 func getColorByType(nodeType string) string {
 	switch nodeType {
-	case "start":
+	case "FirstStep":
+		return "lightred"
+	case "Message":
 		return "lightgreen"
-	case "message":
-		return "lightgreen"
-	case "quickreply":
+	case "QuickReply":
 		return "yellow"
-	case "process":
-		return "lightblue"
+	case "KeywordDecision":
+		return "orange"
+	case "TagDecision":
+		return "brown"
+	case "TagOperation":
+		return "pink"
 	default:
 		return "lightgray"
 	}

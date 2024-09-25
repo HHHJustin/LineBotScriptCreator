@@ -19,9 +19,28 @@ export function setupNodeTemplate(diagram) {
                 new go.Binding("text", "text")
             )
         );
+    myDiagram.linkTemplate =
+    $(go.Link,
+        $(go.Shape), 
+        $(go.Shape, { toArrow: "Standard" }),  
+        {  
+            contextMenu:
+                $(go.Adornment, "Vertical",
+                    $("ContextMenuButton",
+                        $(go.TextBlock, "Delete Link", { margin: 10, font: "bold 14px sans-serif" }),
+                        {
+                            click: function(e, obj) {
+                                deleteLinkHandler(e, obj);
+                            }
+                        }
+                    )
+                )
+        }
+    );
 }
 
 function createContextMenu() {
+    console.log('Creating context menu');
     return $(go.Adornment, "Spot",
         $(go.Panel, "Vertical",
             {
@@ -29,17 +48,19 @@ function createContextMenu() {
                 defaultAlignment: go.Spot.Left,
                 margin: 5
             },
-            createAddNextMenuItem(),
-            createAddPreviousMenuItem(),
-            createAddBranchMenuItem(),
-            createRemoveMenuItem(),
-            createAddLinkMenuItem(),
+            createAddNextNodeMenuItem(),     
+            createAddPreviousNodeMenuItem(), 
+            createDeleteNodeMenuItem(),
+            createAddLinkFromMenuItem(),
+            createAddLinkToMenuItem(),
+            // createAddBranchMenuItem(),
             createEditMenuItem()
         )
     );
 }
 
-function createAddNextMenuItem() {
+/* Create Node */
+function createAddNextNodeMenuItem() {
     return $("ContextMenuButton",
         $(go.Panel, "Horizontal",
             $(go.TextBlock, "Add Next Node",
@@ -57,7 +78,7 @@ function createAddNextMenuItem() {
     );
 }
 
-function createAddPreviousMenuItem() {
+function createAddPreviousNodeMenuItem() {
     return $("ContextMenuButton",
         $(go.Panel, "Horizontal",
             $(go.TextBlock, "Add Previous Node",
@@ -72,82 +93,6 @@ function createAddPreviousMenuItem() {
             width: 200,
             height: 50,
             click: function(e, obj) { addNodeHandler(e, obj, "previous") }
-        }
-    );
-}
-
-function createAddBranchMenuItem() { 
-    return $("ContextMenuButton",
-        $(go.Panel, "Horizontal",
-            $(go.TextBlock, "Add Branch",
-                {
-                    font: "bold 16px sans-serif",
-                    margin: new go.Margin(10, 25, 10, 25),
-                    alignment: go.Spot.Left
-                }
-            ),
-        ),
-        {
-            width: 200,
-            height: 50,
-            click: function(e, obj) { addbranchHandler(e, obj); }
-        }
-    );
-}
-
-function createRemoveMenuItem() {
-    return $("ContextMenuButton",
-        $(go.Panel, "Horizontal",
-            $(go.TextBlock, "Remove Node",
-                {
-                    font: "bold 16px sans-serif",
-                    margin: new go.Margin(10, 25, 10, 25),
-                    alignment: go.Spot.Left
-                }
-            ),
-        ),
-        {
-            width: 200,
-            height: 50,
-            click: function(e, obj) { removeNodeHandler(e, obj); }
-        }
-    );
-}
-
-function createAddLinkMenuItem() {
-    return $("ContextMenuButton",
-        $(go.Panel, "Horizontal",
-            $(go.TextBlock, "Remove Node",
-                {
-                    font: "bold 16px sans-serif",
-                    margin: new go.Margin(10, 25, 10, 25),
-                    alignment: go.Spot.Left
-                }
-            ),
-        ),
-        {
-            width: 200,
-            height: 50,
-            click: function(e, obj) { addLinkHandler(e, obj); }
-        }
-    );
-}
-
-function createEditMenuItem() {
-    return $("ContextMenuButton",
-        $(go.Panel, "Horizontal",
-            $(go.TextBlock, "Remove Node",
-                {
-                    font: "bold 16px sans-serif",
-                    margin: new go.Margin(10, 25, 10, 25),
-                    alignment: go.Spot.Left
-                }
-            ),
-        ),
-        {
-            width: 200,
-            height: 50,
-            click: function(e, obj) { editHandler(e, obj); }
         }
     );
 }
@@ -207,22 +152,171 @@ function showCenterDialog(type, obj) {
     document.body.appendChild(dialog);
 }
 
-
-function addbranchHandler(e, obj) {
-
+/* Delete Node */
+function createDeleteNodeMenuItem() {
+    return $("ContextMenuButton",
+        $(go.Panel, "Horizontal",
+            $(go.TextBlock, "Delete Node",
+                {
+                    font: "bold 16px sans-serif",
+                    margin: new go.Margin(10, 25, 10, 25),
+                    alignment: go.Spot.Left
+                }
+            ),
+        ),
+        {
+            width: 200,
+            height: 50,
+            click: function(e, obj) { deleteNodeHandler(e, obj); }
+        }
+    );
 }
 
-function removeNodeHandler(e, obj) {
-
+function deleteNodeHandler(e, obj) {
+    var node = obj.part.adornedPart;
+    var currentNodeID = node.data.key;
+    var data = {
+        currentNodeID: currentNodeID
+    };
+    var path = '/nodes/delete';
+    sendDataToServer(data, path);
 }
 
-function addLinkHandler(e, obj) {
+/* Add Link */
+function createAddLinkFromMenuItem() {
+    return $("ContextMenuButton",
+        $(go.Panel, "Horizontal",
+            $(go.TextBlock, "Add Link (From)",
+                {
+                    font: "bold 16px sans-serif",
+                    margin: new go.Margin(10, 25, 10, 25),
+                    alignment: go.Spot.Left
+                }
+            ),
+        ),
+        {
+            width: 200,
+            height: 50,
+            click: function (e, obj) {
+                var node = obj.part.adornedPart;  
+                myDiagram.startTransaction("setLinkFrom");
+                myDiagram.model.setDataProperty(node.data, "isLinkFromSelected", true); 
+                myDiagram.commitTransaction("setLinkFrom");
+                console.log("Set Link From Node:", node.data.key);
+            }
+        }
+    );
+}
 
+function createAddLinkToMenuItem() {
+    return $("ContextMenuButton",
+        $(go.Panel, "Horizontal",
+            $(go.TextBlock, "Add Link (To)",
+                {
+                    font: "bold 16px sans-serif",
+                    margin: new go.Margin(10, 25, 10, 25),
+                    alignment: go.Spot.Left
+                }
+            )
+        ),
+        {
+            width: 200,
+            height: 50,
+            click: function (e, obj) {
+                var toNode = obj.part.adornedPart;  
+                var fromNode = findFromNode();  
+                if (!fromNode) {
+                    alert("Please select 'Add Link (From)' first.");
+                    return;
+                }
+                addLinkHandler(fromNode, toNode);  
+            }
+        }
+    );
+}
+
+function addLinkHandler(fromNode, toNode) {
+    var data = {
+        fromNodeID: fromNode.data.key, 
+        toNodeID: toNode.data.key       
+    };
+    console.log("From Node Key:", fromNode.data.key, "Type:", typeof fromNode.data.key);
+    console.log("To Node Key:", toNode.data.key, "Type:", typeof toNode.data.key);
+    var path = '/links/create';
+    sendDataToServer(data, path);  
+    resetLinkFromStatus();
+}
+
+function findFromNode() {
+    var nodes = myDiagram.model.nodeDataArray;
+    for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].isLinkFromSelected) {
+            console.log("Found Link From Node:", nodes[i]);  
+            return myDiagram.findNodeForData(nodes[i]);
+        }
+    }
+    console.log("No Link From Node found.");
+    return null;  
+}
+
+function resetLinkFromStatus() {
+    myDiagram.startTransaction("resetLinkFromStatus");
+    myDiagram.model.nodeDataArray.forEach(function (nodeData) {
+        myDiagram.model.setDataProperty(nodeData, "isLinkFromSelected", false);
+    });
+    myDiagram.commitTransaction("resetLinkFromStatus");
+}
+
+/* Delete Link */
+function deleteLinkHandler(e, obj){
+    var link = obj.part; 
+    console.log(link)
+    if (link !== null) {
+        var fromNodeKey = link.data.from;
+        var toNodeKey = link.data.to;
+        var fromNodeData = myDiagram.model.findNodeDataForKey(fromNodeKey);
+        var toNodeData = myDiagram.model.findNodeDataForKey(toNodeKey);
+        var data = {
+            fromNodeID: fromNodeData.key,
+            toNodeID: toNodeData.key
+        };
+        var path = '/links/delete';
+        sendDataToServer(data, path);
+    }
+}
+
+/* Edit */
+function createEditMenuItem() {
+    return $("ContextMenuButton",
+        $(go.Panel, "Horizontal",
+            $(go.TextBlock, "Edit",
+                {
+                    font: "bold 16px sans-serif",
+                    margin: new go.Margin(10, 25, 10, 25),
+                    alignment: go.Spot.Left
+                }
+            ),
+        ),
+        {
+            width: 200,
+            height: 50,
+            click: function(e, obj) { editHandler(e, obj); }
+        }
+    );
 }
 
 function editHandler(e, obj) {
 
 }
+
+
+// function addbranchHandler(e, obj) {
+    
+// }
+
+
+
+
 
 function sendDataToServer(data, path) {
     fetch(path, {
@@ -230,12 +324,26 @@ function sendDataToServer(data, path) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)  
+        body: JSON.stringify(data)
     })
-    .then(response => response.json())  
-    .then(data => {
-        console.log('Success:', data);
-        window.location.reload();
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        return response.text();  
+    })
+    .then(text => {
+        if (text) {
+            try {
+                const jsonData = JSON.parse(text);  
+                console.log('Success:', jsonData);
+                window.location.reload();
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        } else {
+            console.log('No JSON response returned from server.');
+        }
     })
     .catch((error) => {
         console.error('Error:', error);

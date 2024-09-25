@@ -70,6 +70,14 @@ func main() {
 	// 	api.CreateNextNodeHandler(c, db)
 	// })
 
+	linkRouter := router.Group("/links")
+	linkRouter.POST("/delete", func(c *gin.Context) {
+		api.DeleteLinkHandler(c, db)
+	})
+	linkRouter.POST("/create", func(c *gin.Context) {
+		api.CreateLinkHandler(c, db)
+	})
+
 	// Message
 	messageRouter := router.Group("/messages")
 	messageRouter.POST("/create", func(c *gin.Context) {
