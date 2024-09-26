@@ -298,3 +298,55 @@ func DeleteNodeHandler(c *gin.Context, db *gorm.DB) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Node deleted successfully"})
 }
+
+func GetNodeTypeHandler(c *gin.Context, db *gorm.DB) {
+	currentNodeID := c.Query("currentNodeID")
+	nodeIdInt, err := strconv.Atoi(currentNodeID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid node ID"})
+		return
+	}
+	var node database.Node
+	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"nodeID":   node.ID,
+		"nodeType": node.Type,
+	})
+}
+
+func EditPageHandler(c *gin.Context, db *gorm.DB) {
+	nodeID := c.Param("nodeID")
+	nodeType := c.Param("nodeType")
+
+	switch nodeType {
+	case "Message":
+		c.HTML(http.StatusOK, "message.html", gin.H{
+			"nodeID": nodeID,
+		})
+	case "QuickReply":
+		c.HTML(http.StatusOK, "quickreply.html", gin.H{
+			"nodeID": nodeID,
+		})
+	case "KeywordDecision":
+		c.HTML(http.StatusOK, "keyworddecision.html", gin.H{
+			"nodeID": nodeID,
+		})
+	case "TagDecision":
+		c.HTML(http.StatusOK, "tagdecision.html", gin.H{
+			"nodeID": nodeID,
+		})
+	case "TagOperation":
+		c.HTML(http.StatusOK, "tagoperation.html", gin.H{
+			"nodeID": nodeID,
+		})
+	case "Random":
+		c.HTML(http.StatusOK, "random.html", gin.H{
+			"nodeID": nodeID,
+		})
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported node type"})
+	}
+}

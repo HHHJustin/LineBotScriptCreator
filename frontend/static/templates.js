@@ -114,7 +114,7 @@ function showCenterDialog(type, obj) {
     dialog.style.backgroundColor = "transparent"; 
     var node = obj.part.adornedPart;  
     var currentNodeID = node.data.key; 
-    var options = ["Message", "QuickReply", "Keyword Decision", "Tag Decision", "Add Tag", "Cancel Tag", "Random"];
+    var options = ["Message", "QuickReply", "KeywordDecision", "TagDecision", "TagOperation", "Random"];
     options.forEach(function(option) {
         var button = document.createElement("button");
         button.innerHTML = option;
@@ -240,8 +240,6 @@ function addLinkHandler(fromNode, toNode) {
         fromNodeID: fromNode.data.key, 
         toNodeID: toNode.data.key       
     };
-    console.log("From Node Key:", fromNode.data.key, "Type:", typeof fromNode.data.key);
-    console.log("To Node Key:", toNode.data.key, "Type:", typeof toNode.data.key);
     var path = '/links/create';
     sendDataToServer(data, path);  
     resetLinkFromStatus();
@@ -306,16 +304,45 @@ function createEditMenuItem() {
 }
 
 function editHandler(e, obj) {
-
+    var node = obj.part.adornedPart;
+    var currentNodeID = node.data.key;
+    var path = `/nodes/type?currentNodeID=${currentNodeID}`;
+    fetch(path, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        const nodeType = data.nodeType;
+        const nodeID = data.nodeID;
+        if (nodeType === "Message") {
+            window.location.href = `/nodes/get/${nodeID}/Message`;
+        } else if (nodeType === "QuickReply") {
+            window.location.href = `/nodes/get/${nodeID}/QuickReply`;
+        } else if (nodeType === "KeywordDecision") {
+            window.location.href = `/nodes/get/${nodeID}/KeywordDecision`;
+        }  else if (nodeType === "TagDecision") {
+            window.location.href = `/nodes/get/${nodeID}/TagDecision`;
+        }  else if (nodeType === "TagOperation") {
+            window.location.href = `/nodes/get/${nodeID}/TagOperation`;
+        }  else if (nodeType === "Random") {
+            window.location.href = `/nodes/get/${nodeID}/Random`;
+        }else {
+            console.log("Unsupported node type:", nodeType);
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 
 // function addbranchHandler(e, obj) {
     
 // }
-
-
-
 
 
 function sendDataToServer(data, path) {

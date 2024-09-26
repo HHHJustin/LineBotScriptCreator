@@ -45,6 +45,13 @@ func main() {
 	nodeRouter.GET("/read", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "nodes.html", nil)
 	})
+	nodeRouter.GET("/type", func(c *gin.Context) {
+		api.GetNodeTypeHandler(c, db)
+	})
+	nodeRouter.GET("/get/:nodeID/:nodeType", func(c *gin.Context) {
+		api.EditPageHandler(c, db)
+	})
+
 	nodeRouter.POST("/previous", func(c *gin.Context) {
 		api.UpdateNodePreviousHandler(c, db)
 	})

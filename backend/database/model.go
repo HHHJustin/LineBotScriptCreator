@@ -38,25 +38,6 @@ type Node struct {
 	Randoms      []Random      `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-type NodeCreateRequest struct {
-	CurrentNodeID int    `json:"currentNodeID,omitempty"`
-	NewNodeType   string `json:"newNodeType" binding:"required"`
-}
-
-type NodeDeleteRequest struct {
-	CurrentNodeID int `json:"currentNodeID,omitempty"`
-}
-
-type LinkCreateRequest struct {
-	FromNodeID int `json:"fromNodeID,omitempty"`
-	ToNodeID   int `json:"toNodeID,omitempty"`
-}
-
-type LinkDeleteRequest struct {
-	FromNodeID int `json:"fromNodeID,omitempty"`
-	ToNodeID   int `json:"toNodeID,omitempty"`
-}
-
 type Link struct {
 	From int `json:"from" gorm:"index"`
 	To   int `json:"to" gorm:"index"`

@@ -10,3 +10,4 @@ export async function fetchData(myDiagram) {
         console.error('抓取資料失敗:', error);
     }
 }
+
