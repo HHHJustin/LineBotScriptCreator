@@ -230,18 +230,19 @@ func UpdateNodeNextHandler(c *gin.Context, db *gorm.DB) {
 // @Failure 500 {object} map[string]interface{} "Failed to update node"
 // @Router /nodes/title [post]
 func UpdateNodeTitleHandler(c *gin.Context, db *gorm.DB) {
+	var req database.NodeUpdateTitleRequest
 	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodePreviousId"})
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		fmt.Println("BindJSON Error:", err) // 打印出錯誤
 		return
 	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
+	nodeId := req.CurrentNodeID
+	if err := db.Where("id = ?", nodeId).First(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return
 	}
-	nodeTitle := c.PostForm("nodeTitle")
+	nodeTitle := req.NewTitle
 	node.Title = nodeTitle
 	if err := db.Save(&node).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
@@ -320,11 +321,34 @@ func GetNodeTypeHandler(c *gin.Context, db *gorm.DB) {
 func EditPageHandler(c *gin.Context, db *gorm.DB) {
 	nodeID := c.Param("nodeID")
 	nodeType := c.Param("nodeType")
-
+	var node database.Node
+	if err := db.Where("id = ?", nodeID).First(&node).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
+		return
+	}
 	switch nodeType {
 	case "Message":
+		var messages []database.Message
+		if err := db.Where("node_id = ?", nodeID).Find(&messages).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
+			return
+		}
+		var messageWithIndex []struct {
+			Index   int
+			Message database.Message
+		}
+		for i, msg := range messages {
+			messageWithIndex = append(messageWithIndex, struct {
+				Index   int
+				Message database.Message
+			}{
+				Index:   i + 1,
+				Message: msg,
+			})
+		}
 		c.HTML(http.StatusOK, "message.html", gin.H{
-			"nodeID": nodeID,
+			"Node":     node,
+			"Messages": messageWithIndex,
 		})
 	case "QuickReply":
 		c.HTML(http.StatusOK, "quickreply.html", gin.H{

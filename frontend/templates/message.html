@@ -10,13 +10,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
         }
         table {
             border-collapse: collapse;
-            width: 70%;
+            width: 80%;
             margin: 20px auto;
             background-color: #ffffff;
         }
@@ -44,10 +45,119 @@
             width: 100%;
             height: 100%;
         }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
     </style>
-    <script src="/assets/fetchData.js" defer></script>
 </head>
 <body>
+    <table class="node-info-table">
+        <thead>
+            <tr>
+                <th>NodeID</th>
+                <th>Node Title</th>
+                <th>Type</th>
+                <th>Previous Node</th>
+                <th>Next Node</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{.Node.ID}}</td>
+                <td onclick="makeTitleEditable(this, {{.Node.ID}})">{{.Node.Title}}</td>
+                <td>{{.Node.Type}}</td>
+                <td>
+                    {{if .Node.PreviousNode}}
+                    <button onclick="goToNode({{.Node.PreviousNode}})">Go to Previous Node</button>
+                    {{else}}
+                    No Previous Node
+                    {{end}}
+                </td>
+                <td>
+                    {{if .Node.NextNode}}
+                    <button onclick="goToNode({{.Node.NextNode}})">Go to Next Node</button>
+                    {{else}}
+                    No Next Node
+                    {{end}}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+        function makeTitleEditable(td, nodeID) {
+            const originalTitle = td.innerText;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalTitle;
+            input.onkeydown = async function(event) {
+                if (event.key === 'Enter') {
+                    const newTitle = input.value;
+                    try {
+                        const response = await fetch('/nodes/title', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                currentNodeID: nodeID,
+                                newTitle: newTitle,
+                            }),
+                        });
+
+                        if (response.ok) {
+                            const jsonResponse = await response.json();
+                            console.log('Node title updated:', jsonResponse);
+                            td.innerText = newTitle; 
+                        } else {
+                            console.error('Error updating node title');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                }
+            };
+
+            td.innerHTML = '';
+            td.appendChild(input);
+            input.focus();
+        }
+
+        function goToNode(nodeID) {
+            const url = `/nodes/type?currentNodeID=${nodeID}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const nodeType = data.nodeType;
+
+                    if (nodeType === "Message") {
+                        window.location.href = `/nodes/get/${nodeID}/Message`;
+                    } else if (nodeType === "QuickReply") {
+                        window.location.href = `/nodes/get/${nodeID}/QuickReply`;
+                    }  else if (nodeType === "KeywordDecision") {
+                        window.location.href = `/nodes/get/${nodeID}/KeywordDecision`;
+                    }  else if (nodeType === "TagDecision") {
+                        window.location.href = `/nodes/get/${nodeID}/TagDecision`;
+                    }  else if (nodeType === "TagOperation") {
+                        window.location.href = `/nodes/get/${nodeID}/TagOperation`;
+                    }  else if (nodeType === "Random") {
+                        window.location.href = `/nodes/get/${nodeID}/Random`;
+                    } else {
+                        console.error("Unsupported node type:", nodeType);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching node type:', error);
+                });
+        }
+    </script>
+
     <table>
         <caption>Message List</caption>
         <thead>
@@ -55,33 +165,184 @@
                 <th>Index</th>
                 <th>Message Type</th>
                 <th>Content</th>
+                <th>Action</th>
             </tr>
         </thead>
-        <tbody id="messageTableBody">
+        <tbody>
             {{range .Messages}}
             <tr>
                 <td>{{.Index}}</td>
-                <td onclick="makeEditable(this, {{.MessageID}})">{{.Message.Content}}</td>
+                <td>{{.Message.Type}}</td>
+                <td onclick="makeEditable(this, {{.Message.MessageID}})">{{.Message.Content}}</td>
                 <td>
-                    <form action="/deleteMessage" method="post">
-                        <input type="hidden" name="messageID" value="{{.MessageID}}">
+                    <form id="deleteMessageForm_{{.Message.MessageID}}" onsubmit="submitDeleteMessage(event, {{.Message.MessageID}})">
                         <button type="submit">Delete</button>
                     </form>
+
+                    <script>
+                        function makeEditable(td, messageID) {
+                            const originalContent = td.innerText;
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = originalContent;
+                            input.onkeydown = async function(event) {
+                                if (event.key === 'Enter') {
+                                    const messageContent = input.value;
+                                    const response = await fetch('/messages/update', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            messageID: messageID,
+                                            messageContent: messageContent,
+                                        }),
+                                    });
+                                    if (response.ok) {
+                                        const jsonResponse = await response.json();
+                                        console.log('Message updated:', jsonResponse);
+                                        td.innerText = messageContent; 
+                                    } else {
+                                        console.error('Error updating message');
+                                    }
+                                }
+                            };
+                            td.innerHTML = '';
+                            td.appendChild(input);
+                            input.focus();
+                        }
+
+                        function submitDeleteMessage(event, messageID) {
+                            event.preventDefault();  
+                            const url = window.location.pathname;  
+                            const segments = url.split('/');  
+                            const currentID = segments[3]; 
+                            currentIDInt = parseInt(currentID, 10);
+                            const data = {
+                                messageID: messageID,
+                                currentNodeID: currentIDInt
+                            };
+
+                            fetch('/messages/delete', {
+                                method: 'POST',  
+                                headers: {
+                                    'Content-Type': 'application/json',  
+                                },
+                                body: JSON.stringify(data)  
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error("Network response was not ok");
+                                }
+                                return response.json();  
+                            })
+                            .then(data => {
+                                console.log('Success:', data);
+                                window.location.reload();  
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                        }
+                    </script>
                 </td>
             </tr>
             {{else}}
             <tr>
-                <td colspan="3">No messages found</td>
+                <td colspan="4">No messages found</td>
             </tr>
             {{end}}
             <tr>
-                <form action="/messages/add" method="post">
+                <form action="/messages/create" method="post">
                     <td>New</td>
-                    <td><input type="text" name="messageContent" placeholder="Enter new message" required></td>
-                    <td><button type="submit">Add Message</button></td>
+                    <td>
+                        <select name="newMessageType" id="messageTypeSelect" required onchange="updatePlaceholder()">
+                            <option value="">請選擇資料形式</option>
+                            <option value="Text">Text</option>
+                            <option value="Image">Image</option>
+                            <option value="FlexMessage">FlexMessage</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" name="messageContent" id="messageContentInput" placeholder="Enter new message" required>
+                    </td>
+                    <td>
+                        <button type="button" onclick="submitMessage()">Add</button> 
+                    </td>
                 </form>
+                
+                <script>
+                    function updatePlaceholder() {
+                        const messageType = document.getElementById("messageTypeSelect").value;
+                        const messageInput = document.getElementById("messageContentInput");
+                        if (messageType === "Text") {
+                            messageInput.placeholder = "Enter Text message";
+                        } else if (messageType === "Image") {
+                            messageInput.placeholder = "Enter Image URL";
+                        } else if (messageType === "FlexMessage") {
+                            messageInput.placeholder = "Enter FlexMessage JSON";
+                        } else {
+                            messageInput.placeholder = "Please Choose Image Type";
+                        }
+                    }
+                    function getCurrentIDAndTypeFromURL() {
+                        const url = window.location.pathname;  
+                        const segments = url.split('/');  
+                        const currentID = segments[3];    
+
+                        return {
+                            currentID: currentID,
+                        };
+                    }
+                    async function submitMessage() {
+                        const { currentID } = getCurrentIDAndTypeFromURL(); 
+                        const currentIDInt = parseInt(currentID, 10);
+                        var messageType = document.getElementById("messageTypeSelect").value;
+                        var messageContent = document.getElementById("messageContentInput").value;
+
+                        if (!messageType || !messageContent) {
+                            alert("請填寫完整的資料");
+                            return;
+                        }
+
+                        var data = {
+                            currentNodeID: currentIDInt,
+                            messageType: messageType,
+                            messageContent: messageContent
+                        };
+
+                        try {
+                            const response = await fetch('/messages/create', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(data)
+                            });
+
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+
+                            const result = await response.json();
+                            console.log('Success:', result);
+                            window.location.reload();
+
+                        } catch (error) {
+                            console.error('Error:', error);
+                        }
+                }
+                </script>
             </tr>
         </tbody>
     </table>
+    <div class="button-container">
+        <button onclick="goBackToNodes()">返回</button>
+    </div>
+    <script>
+        function goBackToNodes() {
+            window.location.href = '/nodes/read';
+        }
+    </script>
 </body>
 </html>

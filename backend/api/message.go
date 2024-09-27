@@ -2,8 +2,8 @@ package api
 
 import (
 	"LineBotCreator/database"
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -26,31 +26,34 @@ import (
 // @Failure 500 {object} map[string]interface{} "Failed to update node"
 // @Router /messages/create [post]
 func CreateMessageHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodeId"})
+	var req database.MessageCreateRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
+	var node database.Node
+	nodeId := req.CurrentNodeID
+	if err := db.Where("id = ?", nodeId).First(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return
 	}
-	if node.Type != "message" {
+	if node.Type != "Message" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is wrong type"})
 		return
 	}
-	messageType := c.PostForm("messageType")
-	messageContent := c.PostForm("messageContent")
+	messageType := req.MessageType
+	messageContent := req.MessageContent
 	newMessage := database.Message{
 		Type:    messageType,
 		Content: messageContent,
-		NodeID:  nodeIdInt,
+		NodeID:  nodeId,
 	}
 	if err := db.Create(&newMessage).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Create Message fail"})
 		return
+	}
+	if node.Range == nil {
+		node.Range = make([]int, 0)
 	}
 	node.Range = append(node.Range, newMessage.MessageID)
 	if err := db.Save(&node).Error; err != nil {
@@ -58,10 +61,6 @@ func CreateMessageHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"Message": newMessage})
-}
-
-func ReadMessageHandler(c *gin.Context, db *gorm.DB) {
-	c.HTML(http.StatusOK, ".html", nil)
 }
 
 // UpdateMessage godoc
@@ -79,43 +78,25 @@ func ReadMessageHandler(c *gin.Context, db *gorm.DB) {
 // @Failure 500 {object} map[string]interface{} "Failed to update message"
 // @Router /messages/update [post]
 func UpdateMessageHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodePreviousId"})
-		return
-	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
-		return
-	}
-	if node.Type != "message" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is wrong type"})
+	var req database.MessageUpdateRequest
+	if err := c.Bind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
 	var message database.Message
-	messageId := c.PostForm("messageId")
-	messageIdInt, err := strconv.Atoi(messageId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid messageId"})
+	if err := db.Where("message_id = ?", req.MessageID).First(&message).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Message does not exist"})
 		return
 	}
-	if !contains(node.Range, messageIdInt) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Message ID does not exist in node range"})
-		return
-	}
-	if err := db.Where("message_id = ?", messageIdInt).First(&message).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "message is not exist"})
-		return
-	}
-	newMessageContent := c.PostForm("newMessageContent")
-	message.Content = newMessageContent
+
+	message.Content = req.MessageContent
+
 	if err := db.Save(&message).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update message"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"Message": message})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Message updated successfully"})
 }
 
 // DeleteMessage godoc
@@ -134,25 +115,21 @@ func UpdateMessageHandler(c *gin.Context, db *gorm.DB) {
 // @Failure 500 {object} map[string]interface{} "Failed to delete message"
 // @Router /messages/delete [post]
 func DeleteMessageHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodeId"})
+	var req database.MessageDeleteRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
+	fmt.Println(req)
+	var node database.Node
+	nodeId := req.CurrentNodeID
+	if err := db.Where("id = ?", nodeId).First(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return
 	}
 	var message database.Message
-	messageId := c.PostForm("messageId")
-	messageIdInt, err := strconv.Atoi(messageId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid messsageId"})
-		return
-	}
-	if err := db.Where("message_id = ?", messageIdInt).First(&message).Error; err != nil {
+	messageId := req.MessageID
+	if err := db.Where("message_id = ?", messageId).First(&message).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "message is not exist"})
 		return
 	}
@@ -160,7 +137,7 @@ func DeleteMessageHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to delete message"})
 		return
 	}
-	node.Range = removeValue(node.Range, messageIdInt)
+	node.Range = removeValue(node.Range, messageId)
 	if err := db.Save(&node).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
 		return
