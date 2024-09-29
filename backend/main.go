@@ -36,7 +36,6 @@ func main() {
 	router.POST("/callback", func(c *gin.Context) {
 		api.CallbackHandler(c, bot, db)
 	})
-
 	// Node
 	nodeRouter := router.Group("/nodes")
 	nodeRouter.GET("/get", func(c *gin.Context) {
@@ -51,7 +50,6 @@ func main() {
 	nodeRouter.GET("/get/:nodeID/:nodeType", func(c *gin.Context) {
 		api.EditPageHandler(c, db)
 	})
-
 	nodeRouter.POST("/previous", func(c *gin.Context) {
 		api.UpdateNodePreviousHandler(c, db)
 	})
@@ -73,16 +71,26 @@ func main() {
 	newNodeRouter.POST("/previous", func(c *gin.Context) {
 		api.CreatePreviousNodeHandler(c, db)
 	})
-	// newNodeRouter.POST("/branch", func(c *gin.Context) {
-	// 	api.CreateNextNodeHandler(c, db)
-	// })
+	newNodeRouter.POST("/firststep", func(c *gin.Context) {
+		api.FirstStepHandler(c, db)
+	})
 
+	// Link
 	linkRouter := router.Group("/links")
 	linkRouter.POST("/delete", func(c *gin.Context) {
 		api.DeleteLinkHandler(c, db)
 	})
 	linkRouter.POST("/create", func(c *gin.Context) {
 		api.CreateLinkHandler(c, db)
+	})
+
+	// First Step
+	firstStepRouter := router.Group("/firststep")
+	firstStepRouter.GET("/read", func(c *gin.Context) {
+		api.FirstStepPageHandler(c, db)
+	})
+	firstStepRouter.POST("/delete", func(c *gin.Context) {
+		api.DeleteFirstStepHandler(c, db)
 	})
 
 	// Message

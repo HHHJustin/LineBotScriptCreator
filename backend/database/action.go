@@ -19,6 +19,10 @@ type NodeUpdateTitleRequest struct {
 	NewTitle      string `json:"newTitle,omitempty"`
 }
 
+type FirstStepRequest struct {
+	FirstStepType string `json:"firstStepType,omitempty"`
+}
+
 type EditPageRequest struct {
 	CurrentNodeID int `json:"currentNodeID,omitempty"`
 }

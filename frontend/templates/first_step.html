@@ -3,9 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>First Step</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 20px auto;
+            background-color: #ffffff;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: center;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        caption {
+            caption-side: top;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        td input, td button {
+            background-color: transparent;
+            border: none;
+            padding: 8px;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
-    First Step
+    <h1>First Step</h1> 
+
+    <table>
+        <caption>First Step Information</caption>
+        <thead>
+            <tr>
+                <th>Index</th>
+                <th>First Step Type</th>
+                <th>Next Node</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .FirstSteps}}
+            <tr>
+                <td>{{.Index}}</td>
+                <td>{{.FirstStep.Type}}</td>
+                <td>
+                    {{if .FirstStep.NextNode}}
+                    <button onclick="goToNode({{.FirstStep.NextNode}})">Go to Next Node</button>
+                    {{else}}
+                    No Next Node
+                    {{end}}
+                </td>
+                <td>
+                    <button type="button" onclick="deleteFirstStep('{{.FirstStep.Type}}')">Delete</button>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="4">No messages found</td>
+            </tr>
+            {{end}}
+            <tr>
+                <td>New</td>
+                <td>
+                    <select name="firstStepType" id="firstStepTypeSelect" required>
+                        <option value="">請選擇動作類型</option>
+                        <option value="AddFriend">加入好友</option>
+                        <option value="JoinGroup">加入群組</option>
+                    </select>
+                </td>
+                <td>No Next Node</td>
+                <td>
+                    <button type="button" onclick="submitFirstStep()">Add</button> 
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        function goToNode(nodeID) {
+            const url = `/nodes/type?currentNodeID=${nodeID}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const nodeType = data.nodeType;
+
+                    if (nodeType === "Message") {
+                        window.location.href = `/nodes/get/${nodeID}/Message`;
+                    } else if (nodeType === "QuickReply") {
+                        window.location.href = `/nodes/get/${nodeID}/QuickReply`;
+                    } else if (nodeType === "KeywordDecision") {
+                        window.location.href = `/nodes/get/${nodeID}/KeywordDecision`;
+                    } else if (nodeType === "TagDecision") {
+                        window.location.href = `/nodes/get/${nodeID}/TagDecision`;
+                    } else if (nodeType === "TagOperation") {
+                        window.location.href = `/nodes/get/${nodeID}/TagOperation`;
+                    } else if (nodeType === "Random") {
+                        window.location.href = `/nodes/get/${nodeID}/Random`;
+                    } else {
+                        console.error("Unsupported node type:", nodeType);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching node type:', error);
+                });
+        }
+
+        async function submitFirstStep() {
+            var firstStepType = document.getElementById("firstStepTypeSelect").value;
+
+            if (!firstStepType) {
+                alert("請填寫完整的資料");
+                return;
+            }
+
+            var data = {
+                firstStepType: firstStepType
+            };
+
+            try {
+                const response = await fetch('/nodes/create/firststep', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const result = await response.json();
+                console.log('Success:', result);
+                window.location.reload();
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        async function deleteFirstStep(firstStepType) {
+        const data = {
+            firstStepType: firstStepType
+        };
+
+        try {
+            const response = await fetch('/firststep/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const result = await response.json();
+            console.log('Success:', result);
+            window.location.reload(); 
+        } catch (error) {
+            console.error('Error deleting first step:', error);
+        }
+    }
+    </script>
+
+    <div class="button-container">
+        <button onclick="goBackToNodes()">返回</button>
+    </div>
+    <script>
+        function goBackToNodes() {
+            window.location.href = '/nodes/read';
+        }
+    </script>
 </body>
 </html>
