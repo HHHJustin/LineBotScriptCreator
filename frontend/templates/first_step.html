@@ -134,6 +134,7 @@
                 })
                 .catch(error => {
                     console.error('Error fetching node type:', error);
+                    alert('Error fetching node type: ' + error.message);
                 });
         }
 
@@ -168,6 +169,7 @@
 
             } catch (error) {
                 console.error('Error:', error);
+                alert('Error creating first step: ' + error.message);
             }
         }
         async function deleteFirstStep(firstStepType) {
@@ -193,6 +195,7 @@
             window.location.reload(); 
         } catch (error) {
             console.error('Error deleting first step:', error);
+            alert('Error deleting first step: ' + error.message);
         }
     }
     </script>

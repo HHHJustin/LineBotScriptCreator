@@ -43,6 +43,14 @@ func FirstStepHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
+	var existingNode database.Node
+	if err := db.Where("title = ?", req.FirstStepType).First(&existingNode).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Node with this title already exists"})
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check existing node"})
+		return
+	}
 	node, exists := c.Get("node")
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node data not found"})
