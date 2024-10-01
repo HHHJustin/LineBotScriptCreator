@@ -65,6 +65,8 @@ func main() {
 	nodeRouter.POST("/delete", func(c *gin.Context) {
 		api.DeleteNodeHandler(c, db)
 	})
+
+	// New Node
 	newNodeRouter := nodeRouter.Group("/create").Use(func(c *gin.Context) {
 		api.CreateNodeMiddleware(c)
 	})
@@ -75,7 +77,13 @@ func main() {
 		api.CreatePreviousNodeHandler(c, db)
 	})
 	newNodeRouter.POST("/firststep", func(c *gin.Context) {
-		api.FirstStepHandler(c, db)
+		api.CreateFirstStepHandler(c, db)
+	})
+	newNodeRouter.POST("/branch", func(c *gin.Context) {
+		api.CreateBranchHandler(c, db)
+	})
+	newNodeRouter.POST("/keywordDecision", func(c *gin.Context) {
+		api.CreateKWDecisionHandler(c, db)
 	})
 
 	// Link

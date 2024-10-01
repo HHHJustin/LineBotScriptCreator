@@ -31,7 +31,7 @@ func Connect() *gorm.DB {
 		&Node{},
 		&Message{},
 		&QuickReply{},
-		&KeyDecision{},
+		&KeywordDecision{},
 		&TagDecision{},
 		&Random{},
 		&Tag{},

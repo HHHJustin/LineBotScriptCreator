@@ -131,10 +131,28 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) {
 			Color: getColorByType(node.Type),
 			Loc:   Loc,
 		})
-		if node.NextNode != 0 {
-			graph.Links = append(graph.Links, database.Link{From: node.ID, To: node.NextNode})
+		switch node.Type {
+		case "Message", "FirstStep", "QuickReply":
+			if node.NextNode != 0 {
+				graph.Links = append(graph.Links, database.Link{From: node.ID, To: node.NextNode})
+			}
+		case "KeywordDecision":
+			var keywordDecision database.KeywordDecision
+			for _, next := range node.Range {
+				if err := db.Where("kw_decision_id = ?", next).First(&keywordDecision).Error; err != nil {
+					c.JSON(http.StatusConflict, gin.H{"error": "Keyword decision does not exist."})
+					return
+				}
+				graph.Links = append(graph.Links, database.Link{From: node.ID, To: keywordDecision.NodeID})
+			}
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error node type."})
+			return
 		}
+
 	}
+	fmt.Println(graph)
 	c.JSON(http.StatusOK, graph)
 }
 
@@ -351,19 +369,19 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 			"Messages": messageWithIndex,
 		})
 	case "QuickReply":
-		c.HTML(http.StatusOK, "quickreply.html", gin.H{
+		c.HTML(http.StatusOK, "quickReply.html", gin.H{
 			"nodeID": nodeID,
 		})
 	case "KeywordDecision":
-		c.HTML(http.StatusOK, "keyworddecision.html", gin.H{
+		c.HTML(http.StatusOK, "keywordDecision.html", gin.H{
 			"nodeID": nodeID,
 		})
 	case "TagDecision":
-		c.HTML(http.StatusOK, "tagdecision.html", gin.H{
+		c.HTML(http.StatusOK, "tagDecision.html", gin.H{
 			"nodeID": nodeID,
 		})
 	case "TagOperation":
-		c.HTML(http.StatusOK, "tagoperation.html", gin.H{
+		c.HTML(http.StatusOK, "tagOperation.html", gin.H{
 			"nodeID": nodeID,
 		})
 	case "Random":
@@ -371,7 +389,7 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 			"nodeID": nodeID,
 		})
 	case "FirstStep":
-		c.HTML(http.StatusOK, "firststep.html", nil)
+		c.HTML(http.StatusOK, "firstStep.html", nil)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported node type"})
 	}

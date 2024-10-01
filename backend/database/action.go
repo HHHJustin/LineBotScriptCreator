@@ -1,28 +1,28 @@
 package database
 
-type MessageWithIndex struct {
-	Message
-	Index int
-}
-
-type NodeCreateRequest struct {
-	CurrentNodeID int    `json:"currentNodeID,omitempty"`
-	NewNodeType   string `json:"newNodeType" binding:"required"`
-}
-
-type NodeDeleteRequest struct {
+/* Node */
+type NodeBaseRequest struct {
 	CurrentNodeID int `json:"currentNodeID,omitempty"`
 }
 
+type NodeCreateRequest struct {
+	NodeBaseRequest
+	NewNodeType string `json:"newNodeType" binding:"required"`
+}
+
+type NodeDeleteRequest struct {
+	NodeBaseRequest
+}
+
 type NodeUpdateTitleRequest struct {
-	CurrentNodeID int    `json:"currentNodeID,omitempty"`
-	NewTitle      string `json:"newTitle,omitempty"`
+	NodeBaseRequest
+	NewTitle string `json:"newTitle,omitempty"`
 }
 
 type NodeUpdateLocationRequest struct {
-	CurrentNodeID int     `json:"currentNodeID,omitempty"`
-	LocX          float64 `json:"locX"`
-	LocY          float64 `json:"locY"`
+	NodeBaseRequest
+	LocX float64 `json:"locX"`
+	LocY float64 `json:"locY"`
 }
 
 type FirstStepRequest struct {
@@ -30,7 +30,7 @@ type FirstStepRequest struct {
 }
 
 type EditPageRequest struct {
-	CurrentNodeID int `json:"currentNodeID,omitempty"`
+	NodeBaseRequest
 }
 
 type LinkCreateRequest struct {
@@ -43,18 +43,29 @@ type LinkDeleteRequest struct {
 	ToNodeID   int `json:"toNodeID,omitempty"`
 }
 
+/* Message */
+type MessageBaseRequest struct {
+	MessageID int `json:"messageID,omitempty"`
+}
+
 type MessageCreateRequest struct {
-	CurrentNodeID  int    `json:"currentNodeID,omitempty"`
+	NodeBaseRequest
+	MessageBaseRequest
 	MessageType    string `json:"messageType" binding:"required"`
 	MessageContent string `json:"messageContent" binding:"required"`
 }
 
 type MessageDeleteRequest struct {
-	CurrentNodeID int `json:"currentNodeID,omitempty"`
-	MessageID     int `json:"messageID,omitempty"`
+	NodeBaseRequest
+	MessageBaseRequest
 }
 
 type MessageUpdateRequest struct {
-	MessageID      int    `json:"messageID"`
+	MessageBaseRequest
 	MessageContent string `json:"messageContent"`
+}
+
+type MessageWithIndex struct {
+	Message
+	Index int
 }

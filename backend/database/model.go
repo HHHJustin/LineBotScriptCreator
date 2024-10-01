@@ -23,19 +23,19 @@ func (ia *IntArray) Scan(value interface{}) error {
 }
 
 type Node struct {
-	ID           int           `gorm:"primaryKey;autoIncrement"`
-	Title        string        `gorm:"size:255;not null"`
-	Type         string        `gorm:"size:255;not null"`
-	Range        IntArray      `gorm:"type:jsonb;not null"`
-	PreviousNode int           `gorm:"index"`
-	NextNode     int           `gorm:"index"`
-	LocX         int           `gorm:"size:50;default:0" json:"locX"`
-	LocY         int           `gorm:"size:50;default:0" json:"locY"`
-	Messages     []Message     `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	QuickReplies []QuickReply  `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	KeyDecisions []KeyDecision `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	TagDecisions []TagDecision `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Randoms      []Random      `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	ID               int               `gorm:"primaryKey;autoIncrement"`
+	Title            string            `gorm:"size:255;not null"`
+	Type             string            `gorm:"size:255;not null"`
+	Range            IntArray          `gorm:"type:jsonb;not null"`
+	PreviousNode     int               `gorm:"index"`
+	NextNode         int               `gorm:"index"`
+	LocX             int               `gorm:"size:50;default:0" json:"locX"`
+	LocY             int               `gorm:"size:50;default:0" json:"locY"`
+	Messages         []Message         `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	QuickReplies     []QuickReply      `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	KeywordDecisions []KeywordDecision `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	TagDecisions     []TagDecision     `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Randoms          []Random          `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Link struct {
@@ -71,7 +71,7 @@ type QuickReply struct {
 	Node         Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-type KeyDecision struct {
+type KeywordDecision struct {
 	KWDecisionID int    `gorm:"primaryKey;autoIncrement"`
 	Keyword      string `gorm:"size:255;not null"`
 	NextNode     int    `gorm:"not null;index"`

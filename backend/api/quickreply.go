@@ -61,10 +61,6 @@ func CreateQuickReplyHandler(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, gin.H{"QuickReply": newQuickReply})
 }
 
-func ReadQuickReplyHandler(c *gin.Context, db *gorm.DB) {
-	c.HTML(http.StatusOK, ".html", nil)
-}
-
 // UpdateQuickReplyHandler godoc
 // @Summary Update a quick reply by ID
 // @Description Update the button name and reply content of a specific quick reply associated with a node

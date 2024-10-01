@@ -32,12 +32,12 @@ func FirstStepPageHandler(c *gin.Context, db *gorm.DB) {
 			FirstStep: firstStep,
 		})
 	}
-	c.HTML(http.StatusOK, "firststep.html", gin.H{
+	c.HTML(http.StatusOK, "firstStep.html", gin.H{
 		"FirstSteps": firstStepWithIndex,
 	})
 }
 
-func FirstStepHandler(c *gin.Context, db *gorm.DB) {
+func CreateFirstStepHandler(c *gin.Context, db *gorm.DB) {
 	var req database.FirstStepRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})

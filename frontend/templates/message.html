@@ -62,7 +62,7 @@
     </style>
 </head>
 <body>
-    <h1>Message</h1>
+    <h1>Message List</h1>
     <table class="node-info-table">
         <thead>
             <tr>
@@ -140,11 +140,11 @@
                         <button type="button" onclick="submitMessage()">Add</button> 
                     </td>
                 </form>
-                <script type="module" src="/assets/nodeActions.js"></script>
-                <script type="module" src="/assets/messages.js"></script>
+                <script type="module" src="/assets/nodeAction.js"></script>
+                <script type="module" src="/assets/message.js"></script>
                 <script type="module">
-                    import { goToNode, makeTitleEditable } from '/assets/nodeActions.js';
-                    import { makeEditable, submitDeleteMessage, submitMessage, updatePlaceholder } from '/assets/messages.js';
+                    import { goToNode, makeTitleEditable } from '/assets/nodeAction.js';
+                    import { makeEditable, submitDeleteMessage, submitMessage, updatePlaceholder } from '/assets/message.js';
                     window.goToNode = goToNode;
                     window.makeTitleEditable = makeTitleEditable;
                     window.makeEditable = makeEditable;
