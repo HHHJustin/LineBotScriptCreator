@@ -95,75 +95,6 @@
             </tr>
         </tbody>
     </table>
-    <script>
-        function makeTitleEditable(td, nodeID) {
-            const originalTitle = td.innerText;
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = originalTitle;
-            input.onkeydown = async function(event) {
-                if (event.key === 'Enter') {
-                    const newTitle = input.value;
-                    try {
-                        const response = await fetch('/nodes/title', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                currentNodeID: nodeID,
-                                newTitle: newTitle,
-                            }),
-                        });
-
-                        if (response.ok) {
-                            const jsonResponse = await response.json();
-                            console.log('Node title updated:', jsonResponse);
-                            td.innerText = newTitle; 
-                        } else {
-                            console.error('Error updating node title');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                    }
-                }
-            };
-
-            td.innerHTML = '';
-            td.appendChild(input);
-            input.focus();
-        }
-
-        function goToNode(nodeID) {
-            const url = `/nodes/type?currentNodeID=${nodeID}`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const nodeType = data.nodeType;
-
-                    if (nodeType === "Message") {
-                        window.location.href = `/nodes/get/${nodeID}/Message`;
-                    } else if (nodeType === "QuickReply") {
-                        window.location.href = `/nodes/get/${nodeID}/QuickReply`;
-                    }  else if (nodeType === "KeywordDecision") {
-                        window.location.href = `/nodes/get/${nodeID}/KeywordDecision`;
-                    }  else if (nodeType === "TagDecision") {
-                        window.location.href = `/nodes/get/${nodeID}/TagDecision`;
-                    }  else if (nodeType === "TagOperation") {
-                        window.location.href = `/nodes/get/${nodeID}/TagOperation`;
-                    }  else if (nodeType === "Random") {
-                        window.location.href = `/nodes/get/${nodeID}/Random`;
-                    } else {
-                        console.error("Unsupported node type:", nodeType);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching node type:', error);
-                });
-        }
-    </script>
-
     <table>
         <caption>Message List</caption>
         <thead>
@@ -184,73 +115,6 @@
                     <form id="deleteMessageForm_{{.Message.MessageID}}" onsubmit="submitDeleteMessage(event, {{.Message.MessageID}})">
                         <button type="submit">Delete</button>
                     </form>
-
-                    <script>
-                        function makeEditable(td, messageID) {
-                            const originalContent = td.innerText;
-                            const input = document.createElement('input');
-                            input.type = 'text';
-                            input.value = originalContent;
-                            input.onkeydown = async function(event) {
-                                if (event.key === 'Enter') {
-                                    const messageContent = input.value;
-                                    const response = await fetch('/messages/update', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                        },
-                                        body: JSON.stringify({
-                                            messageID: messageID,
-                                            messageContent: messageContent,
-                                        }),
-                                    });
-                                    if (response.ok) {
-                                        const jsonResponse = await response.json();
-                                        console.log('Message updated:', jsonResponse);
-                                        td.innerText = messageContent; 
-                                    } else {
-                                        console.error('Error updating message');
-                                    }
-                                }
-                            };
-                            td.innerHTML = '';
-                            td.appendChild(input);
-                            input.focus();
-                        }
-
-                        function submitDeleteMessage(event, messageID) {
-                            event.preventDefault();  
-                            const url = window.location.pathname;  
-                            const segments = url.split('/');  
-                            const currentID = segments[3]; 
-                            currentIDInt = parseInt(currentID, 10);
-                            const data = {
-                                messageID: messageID,
-                                currentNodeID: currentIDInt
-                            };
-
-                            fetch('/messages/delete', {
-                                method: 'POST',  
-                                headers: {
-                                    'Content-Type': 'application/json',  
-                                },
-                                body: JSON.stringify(data)  
-                            })
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error("Network response was not ok");
-                                }
-                                return response.json();  
-                            })
-                            .then(data => {
-                                console.log('Success:', data);
-                                window.location.reload();  
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                            });
-                        }
-                    </script>
                 </td>
             </tr>
             {{else}}
@@ -276,68 +140,17 @@
                         <button type="button" onclick="submitMessage()">Add</button> 
                     </td>
                 </form>
-                
-                <script>
-                    function updatePlaceholder() {
-                        const messageType = document.getElementById("messageTypeSelect").value;
-                        const messageInput = document.getElementById("messageContentInput");
-                        if (messageType === "Text") {
-                            messageInput.placeholder = "Enter Text message";
-                        } else if (messageType === "Image") {
-                            messageInput.placeholder = "Enter Image URL";
-                        } else if (messageType === "FlexMessage") {
-                            messageInput.placeholder = "Enter FlexMessage JSON";
-                        } else {
-                            messageInput.placeholder = "Please Choose Image Type";
-                        }
-                    }
-                    function getCurrentIDAndTypeFromURL() {
-                        const url = window.location.pathname;  
-                        const segments = url.split('/');  
-                        const currentID = segments[3];    
-
-                        return {
-                            currentID: currentID,
-                        };
-                    }
-                    async function submitMessage() {
-                        const { currentID } = getCurrentIDAndTypeFromURL(); 
-                        const currentIDInt = parseInt(currentID, 10);
-                        var messageType = document.getElementById("messageTypeSelect").value;
-                        var messageContent = document.getElementById("messageContentInput").value;
-
-                        if (!messageType || !messageContent) {
-                            alert("請填寫完整的資料");
-                            return;
-                        }
-
-                        var data = {
-                            currentNodeID: currentIDInt,
-                            messageType: messageType,
-                            messageContent: messageContent
-                        };
-
-                        try {
-                            const response = await fetch('/messages/create', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify(data)
-                            });
-
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-
-                            const result = await response.json();
-                            console.log('Success:', result);
-                            window.location.reload();
-
-                        } catch (error) {
-                            console.error('Error:', error);
-                        }
-                }
+                <script type="module" src="/assets/nodeActions.js"></script>
+                <script type="module" src="/assets/messages.js"></script>
+                <script type="module">
+                    import { goToNode, makeTitleEditable } from '/assets/nodeActions.js';
+                    import { makeEditable, submitDeleteMessage, submitMessage, updatePlaceholder } from '/assets/messages.js';
+                    window.goToNode = goToNode;
+                    window.makeTitleEditable = makeTitleEditable;
+                    window.makeEditable = makeEditable;
+                    window.submitDeleteMessage = submitDeleteMessage;
+                    window.submitMessage = submitMessage;
+                    window.updatePlaceholder = updatePlaceholder;
                 </script>
             </tr>
         </tbody>

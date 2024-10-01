@@ -6,6 +6,7 @@ export function setupNodeTemplate(diagram) {
     myDiagram.nodeTemplate =
         $(go.Node, "Auto",
             {
+                movable: true, 
                 click: null,
                 contextMenu: createContextMenu()
             },
@@ -330,6 +331,8 @@ function editHandler(e, obj) {
             window.location.href = `/nodes/get/${nodeID}/TagOperation`;
         }  else if (nodeType === "Random") {
             window.location.href = `/nodes/get/${nodeID}/Random`;
+        }  else if (nodeType === "FirstStep") {
+            window.location.href = `/firststep/read`;
         }else {
             console.log("Unsupported node type:", nodeType);
         }

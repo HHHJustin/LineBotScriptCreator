@@ -3,7 +3,6 @@ export function setupDragFunctionality(myDiagram) {
     let startPoint = null;
 
     const diagramDiv = document.getElementById("myDiagramDiv");
-
     diagramDiv.addEventListener("mousedown", (event) => {
         if (event.target === diagramDiv) {
             isDragging = true;

@@ -106,100 +106,15 @@
             </tr>
         </tbody>
     </table>
-
-    <script>
-        function goToNode(nodeID) {
-            const url = `/nodes/type?currentNodeID=${nodeID}`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const nodeType = data.nodeType;
-
-                    if (nodeType === "Message") {
-                        window.location.href = `/nodes/get/${nodeID}/Message`;
-                    } else if (nodeType === "QuickReply") {
-                        window.location.href = `/nodes/get/${nodeID}/QuickReply`;
-                    } else if (nodeType === "KeywordDecision") {
-                        window.location.href = `/nodes/get/${nodeID}/KeywordDecision`;
-                    } else if (nodeType === "TagDecision") {
-                        window.location.href = `/nodes/get/${nodeID}/TagDecision`;
-                    } else if (nodeType === "TagOperation") {
-                        window.location.href = `/nodes/get/${nodeID}/TagOperation`;
-                    } else if (nodeType === "Random") {
-                        window.location.href = `/nodes/get/${nodeID}/Random`;
-                    } else {
-                        console.error("Unsupported node type:", nodeType);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching node type:', error);
-                    alert('Error fetching node type: ' + error.message);
-                });
-        }
-
-        async function submitFirstStep() {
-            var firstStepType = document.getElementById("firstStepTypeSelect").value;
-
-            if (!firstStepType) {
-                alert("請填寫完整的資料");
-                return;
-            }
-
-            var data = {
-                firstStepType: firstStepType
-            };
-
-            try {
-                const response = await fetch('/nodes/create/firststep', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const result = await response.json();
-                console.log('Success:', result);
-                window.location.reload();
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error creating first step: ' + error.message);
-            }
-        }
-        async function deleteFirstStep(firstStepType) {
-        const data = {
-            firstStepType: firstStepType
-        };
-
-        try {
-            const response = await fetch('/firststep/delete', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const result = await response.json();
-            console.log('Success:', result);
-            window.location.reload(); 
-        } catch (error) {
-            console.error('Error deleting first step:', error);
-            alert('Error deleting first step: ' + error.message);
-        }
-    }
+    <script type="module" src="/assets/nodeActions.js"></script>
+    <script type="module" src="/assets/firststep.js"></script>
+    <script type="module">
+        import { goToNode } from '/assets/nodeActions.js';
+        import { deleteFirstStep, submitFirstStep } from '/assets/firststep.js';
+        window.goToNode = goToNode;
+        window.deleteFirstStep = deleteFirstStep;
+        window.submitFirstStep = submitFirstStep;
     </script>
-
     <div class="button-container">
         <button onclick="goBackToNodes()">返回</button>
     </div>

@@ -32,7 +32,7 @@ func FirstStepPageHandler(c *gin.Context, db *gorm.DB) {
 			FirstStep: firstStep,
 		})
 	}
-	c.HTML(http.StatusOK, "first_step.html", gin.H{
+	c.HTML(http.StatusOK, "firststep.html", gin.H{
 		"FirstSteps": firstStepWithIndex,
 	})
 }
@@ -91,7 +91,16 @@ func DeleteFirstStepHandler(c *gin.Context, db *gorm.DB) {
 		}
 		return
 	}
-
+	var nextNode database.Node
+	if err := db.Where("id = ?", node.NextNode).First(&nextNode).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Node with this title already exists"})
+		return
+	}
+	nextNode.PreviousNode = 0
+	if err := db.Save(&nextNode).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
+		return
+	}
 	if err := db.Delete(&node).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete node"})
 		return

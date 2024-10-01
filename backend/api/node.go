@@ -370,7 +370,32 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 		c.HTML(http.StatusOK, "random.html", gin.H{
 			"nodeID": nodeID,
 		})
+	case "FirstStep":
+		c.HTML(http.StatusOK, "firststep.html", nil)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported node type"})
 	}
+}
+
+func UpdateLocationHandler(c *gin.Context, db *gorm.DB) {
+	var req database.NodeUpdateLocationRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		return
+	}
+	var node database.Node
+	if err := db.Where("id = ?", req.CurrentNodeID).First(&node).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node not found"})
+		return
+	}
+
+	node.LocX = int(req.LocX)
+	node.LocY = int(req.LocY)
+
+	if err := db.Save(&node).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node location"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Node location updated successfully"})
 }

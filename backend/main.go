@@ -56,6 +56,9 @@ func main() {
 	nodeRouter.POST("/next", func(c *gin.Context) {
 		api.UpdateNodeNextHandler(c, db)
 	})
+	nodeRouter.POST("/updatelocation", func(c *gin.Context) {
+		api.UpdateLocationHandler(c, db)
+	})
 	nodeRouter.POST("/title", func(c *gin.Context) {
 		api.UpdateNodeTitleHandler(c, db)
 	})

@@ -1,15 +1,10 @@
-// nodeActions.js
-
 let myDiagramInstance = null;
 
-// 初始化函數，用於設置 myDiagram 的引用
 export function initialize(diagram) {
     myDiagramInstance = diagram;
 }
 
-// 顯示上下文菜單
 export function showContextMenu(event, nodeData) {
-    // 確保上下文菜單存在
     let menu = document.getElementById('contextMenu');
     if (!menu) {
         menu = document.createElement('div');
@@ -24,42 +19,31 @@ export function showContextMenu(event, nodeData) {
         document.body.appendChild(menu);
     }
 
-    // 清空之前的內容
     menu.innerHTML = '';
-
-    // 添加 "Add" 按鈕
     const addButton = document.createElement('button');
     addButton.textContent = 'Add';
     addButton.onclick = async () => {
-        // 這裡可以調用你的添加節點函數
         await createNodeForParent(nodeData);
         hideMenu();
     };
     menu.appendChild(addButton);
 
-    // 添加 "Remove" 按鈕
     const removeButton = document.createElement('button');
     removeButton.textContent = 'Remove';
     removeButton.onclick = () => {
-        // 這裡可以調用你的刪除節點函數
         removeNode(nodeData);
         hideMenu();
     };
     menu.appendChild(removeButton);
-
-    // 計算菜單的位置
     const menuX = event.clientX;
     const menuY = event.clientY;
 
     menu.style.left = `${menuX}px`;
     menu.style.top = `${menuY}px`;
     menu.style.display = 'block';
-
-    // 點擊其他地方隱藏菜單
     document.addEventListener('click', hideMenuOutside);
 }
 
-// 隱藏上下文菜單
 function hideMenu() {
     const menu = document.getElementById('contextMenu');
     if (menu) {
@@ -68,7 +52,6 @@ function hideMenu() {
     document.removeEventListener('click', hideMenuOutside);
 }
 
-// 點擊外部隱藏上下文菜單
 function hideMenuOutside(event) {
     const menu = document.getElementById('contextMenu');
     if (menu && !menu.contains(event.target)) {
@@ -77,14 +60,79 @@ function hideMenuOutside(event) {
     }
 }
 
-// 根據選擇的類型創建新節點
 async function createNodeForParent(parentNodeData) {
-    // 這裡可以使用之前的函數來添加新節點
-    const typeId = prompt("請輸入新節點的類型ID"); // 這裡可以更改為你的實現方式
+    const typeId = prompt("請輸入新節點的類型ID"); 
     await createNode(typeId, parentNodeData);
 }
 
-// 刪除節點
 function removeNode(nodeData) {
     myDiagramInstance.model.remove(nodeData);
+}
+
+export function goToNode(nodeID) {
+    const url = `/nodes/type?currentNodeID=${nodeID}`;
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const nodeType = data.nodeType;
+
+            if (nodeType === "Message") {
+                window.location.href = `/nodes/get/${nodeID}/Message`;
+            } else if (nodeType === "QuickReply") {
+                window.location.href = `/nodes/get/${nodeID}/QuickReply`;
+            }  else if (nodeType === "KeywordDecision") {
+                window.location.href = `/nodes/get/${nodeID}/KeywordDecision`;
+            }  else if (nodeType === "TagDecision") {
+                window.location.href = `/nodes/get/${nodeID}/TagDecision`;
+            }  else if (nodeType === "TagOperation") {
+                window.location.href = `/nodes/get/${nodeID}/TagOperation`;
+            }  else if (nodeType === "Random") {
+                window.location.href = `/nodes/get/${nodeID}/Random`;
+            }  else if (nodeType === "FirstStep") {
+                window.location.href = `/firststep/read`;
+            }  else {
+                console.error("Unsupported node type:", nodeType);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching node type:', error);
+        });
+}
+
+export function makeTitleEditable(td, nodeID) {
+    const originalTitle = td.innerText;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = originalTitle;
+    input.onkeydown = async function(event) {
+        if (event.key === 'Enter') {
+            const newTitle = input.value;
+            try {
+                const response = await fetch('/nodes/title', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        currentNodeID: nodeID,
+                        newTitle: newTitle,
+                    }),
+                });
+
+                if (response.ok) {
+                    const jsonResponse = await response.json();
+                    console.log('Node title updated:', jsonResponse);
+                    td.innerText = newTitle; 
+                } else {
+                    console.error('Error updating node title');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    };
+
+    td.innerHTML = '';
+    td.appendChild(input);
+    input.focus();
 }

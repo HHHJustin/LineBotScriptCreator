@@ -19,6 +19,12 @@ type NodeUpdateTitleRequest struct {
 	NewTitle      string `json:"newTitle,omitempty"`
 }
 
+type NodeUpdateLocationRequest struct {
+	CurrentNodeID int     `json:"currentNodeID,omitempty"`
+	LocX          float64 `json:"locX"`
+	LocY          float64 `json:"locY"`
+}
+
 type FirstStepRequest struct {
 	FirstStepType string `json:"firstStepType,omitempty"`
 }
