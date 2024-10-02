@@ -116,6 +116,15 @@ func main() {
 		api.DeleteMessageHandler(c, db)
 	})
 
+	// Keyword Decision
+	keywordDecisionRouter := router.Group("/keywordDecisions")
+	keywordDecisionRouter.POST("/delete", func(c *gin.Context) {
+		api.DeleteKWDecisionHandler(c, db)
+	})
+	keywordDecisionRouter.POST("/update", func(c *gin.Context) {
+		api.UpdateKWDecisionHandler(c, db)
+	})
+
 	// QuickReply
 	quickReplyRouter := router.Group("/quickreplies")
 	quickReplyRouter.POST("/create", func(c *gin.Context) {

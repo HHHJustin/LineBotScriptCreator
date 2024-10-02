@@ -65,7 +65,17 @@ type MessageUpdateRequest struct {
 	MessageContent string `json:"messageContent"`
 }
 
-type MessageWithIndex struct {
-	Message
-	Index int
+/* Keyword Decision */
+type KeywordDecisionBaseRequest struct {
+	KeywordDecisionID int `json:"keywordDecisionID,omitempty"`
+}
+
+type KeywordDecisionDeleteRequest struct {
+	NodeBaseRequest
+	KeywordDecisionBaseRequest
+}
+
+type KeywordDecisionUpdateRequest struct {
+	KeywordDecisionBaseRequest
+	Keyword string `json:"Keyword"`
 }

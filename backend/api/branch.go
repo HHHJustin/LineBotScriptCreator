@@ -46,7 +46,9 @@ func branchRangeAppend(currentNode *database.Node, newNode *database.Node, db *g
 	switch currentNode.Type {
 	case "KeywordDecision":
 		newKWDecision := database.KeywordDecision{
-			NodeID: newNode.ID,
+			NodeID:       currentNode.ID,
+			NextNode:     newNode.ID,
+			NextNodeType: newNode.Type,
 		}
 		if err := db.Create(&newKWDecision).Error; err != nil {
 			return fmt.Errorf("failed to create KeywordDecision: %w", err)

@@ -2,7 +2,6 @@ package api
 
 import (
 	"LineBotCreator/database"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -120,7 +119,6 @@ func DeleteMessageHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
-	fmt.Println(req)
 	var node database.Node
 	nodeId := req.CurrentNodeID
 	if err := db.Where("id = ?", nodeId).First(&node).Error; err != nil {

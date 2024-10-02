@@ -2,6 +2,7 @@ package api
 
 import (
 	"LineBotCreator/database"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -137,13 +138,20 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) {
 				graph.Links = append(graph.Links, database.Link{From: node.ID, To: node.NextNode})
 			}
 		case "KeywordDecision":
-			var keywordDecision database.KeywordDecision
-			for _, next := range node.Range {
-				if err := db.Where("kw_decision_id = ?", next).First(&keywordDecision).Error; err != nil {
-					c.JSON(http.StatusConflict, gin.H{"error": "Keyword decision does not exist."})
+			for _, nextID := range node.Range {
+				var keywordDecision database.KeywordDecision
+				if err := db.Where("kw_decision_id = ?", nextID).First(&keywordDecision).Error; err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("Keyword decision with ID %d does not exist.", nextID)})
+						return
+					}
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 					return
 				}
-				graph.Links = append(graph.Links, database.Link{From: node.ID, To: keywordDecision.NodeID})
+				graph.Links = append(graph.Links, database.Link{
+					From: node.ID,
+					To:   keywordDecision.NextNode,
+				})
 			}
 
 		default:
@@ -152,7 +160,6 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) {
 		}
 
 	}
-	fmt.Println(graph)
 	c.JSON(http.StatusOK, graph)
 }
 
@@ -355,13 +362,13 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 			Index   int
 			Message database.Message
 		}
-		for i, msg := range messages {
+		for i, v := range messages {
 			messageWithIndex = append(messageWithIndex, struct {
 				Index   int
 				Message database.Message
 			}{
 				Index:   i + 1,
-				Message: msg,
+				Message: v,
 			})
 		}
 		c.HTML(http.StatusOK, "message.html", gin.H{
@@ -373,8 +380,27 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 			"nodeID": nodeID,
 		})
 	case "KeywordDecision":
+		var keywordDecisions []database.KeywordDecision
+		if err := db.Where("node_id = ?", nodeID).Find(&keywordDecisions).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
+			return
+		}
+		var KWDecionWithIndex []struct {
+			Index           int
+			KeywordDecision database.KeywordDecision
+		}
+		for i, v := range keywordDecisions {
+			KWDecionWithIndex = append(KWDecionWithIndex, struct {
+				Index           int
+				KeywordDecision database.KeywordDecision
+			}{
+				Index:           i + 1,
+				KeywordDecision: v,
+			})
+		}
 		c.HTML(http.StatusOK, "keywordDecision.html", gin.H{
-			"nodeID": nodeID,
+			"Node":             node,
+			"KeywordDecisions": KWDecionWithIndex,
 		})
 	case "TagDecision":
 		c.HTML(http.StatusOK, "tagDecision.html", gin.H{

@@ -75,6 +75,7 @@ type KeywordDecision struct {
 	KWDecisionID int    `gorm:"primaryKey;autoIncrement"`
 	Keyword      string `gorm:"size:255;not null"`
 	NextNode     int    `gorm:"not null;index"`
+	NextNodeType string `gorm:"size:255;not null"`
 	NodeID       int    `gorm:"not null;index"`
 	Node         Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

@@ -1,3 +1,5 @@
+import { getCurrentIDAndTypeFromURL } from './utils.js';
+
 export function makeEditable(td, messageID) {
     const originalContent = td.innerText;
     const input = document.createElement('input');
@@ -85,15 +87,6 @@ export  function updatePlaceholder() {
     }
 }
 
-export function getCurrentIDAndTypeFromURL() {
-    const url = window.location.pathname;  
-    const segments = url.split('/');  
-    const currentID = segments[3];    
-
-    return {
-        currentID: currentID,
-    };
-}
 export async function submitMessage() {
     const { currentID } = getCurrentIDAndTypeFromURL(); 
     const currentIDInt = parseInt(currentID, 10);

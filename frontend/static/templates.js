@@ -100,10 +100,30 @@ function createAddPreviousNodeMenuItem() {
 
 function addNodeHandler(e, obj, type) {
     console.log("Clicked: Add " + type + " Node");
-    var node = obj.part.adornedPart;  
-    var currentNodeID = node.data.key; 
-    var path = '/nodes/create/' + type;
-    showCenterDialog(path, currentNodeID);
+    var node = obj.part.adornedPart;
+    var currentNodeID = node.data.key;
+    var path = `/nodes/type?currentNodeID=${currentNodeID}`;
+    fetch(path, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const nodeType = data.nodeType;
+        const nodeID = data.nodeID;
+        if (nodeType === "Message" || nodeType === "QuickReply" || nodeType === "TagOperation" || nodeType === "FirstStep") {
+            var path = '/nodes/create/' + type;
+            showCenterDialog(path, currentNodeID);
+            console.log('Success:', data);
+        } else {
+            alert(`Please use 「Add Branch」to add next node.`);
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 /* Delete Node */
