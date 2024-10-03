@@ -64,7 +64,7 @@ func CreateFirstStepHandler(c *gin.Context, db *gorm.DB) {
 	newNode := node.(database.Node)
 	newNode.Title = req.FirstStepType
 	newNode.Type = "FirstStep"
-	newNode.PreviousNode = 0
+	newNode.PreviousNode = []int{}
 	newNode.NextNode = 0
 	newNode.LocX = 0
 	newNode.LocY = (int(count)) * 100
@@ -96,7 +96,7 @@ func DeleteFirstStepHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Node with this title already exists"})
 		return
 	}
-	nextNode.PreviousNode = 0
+	nextNode.PreviousNode = removeValue(nextNode.PreviousNode, node.ID)
 	if err := db.Save(&nextNode).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
 		return

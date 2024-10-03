@@ -38,7 +38,7 @@ func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	newNode.Type = req.NewNodeType
-	newNode.PreviousNode = currentNode.ID
+	newNode.PreviousNode = append(newNode.PreviousNode, currentNode.ID)
 	newNode.NextNode = currentNode.NextNode
 	newNode.LocX = currentNode.LocX + 200
 	newNode.LocY = currentNode.LocY
@@ -52,7 +52,8 @@ func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 			return
 		}
-		nextNode.PreviousNode = newNode.ID
+		nextNode.PreviousNode = removeValue(nextNode.PreviousNode, currentNode.ID)
+		nextNode.PreviousNode = append(nextNode.PreviousNode, newNode.ID)
 		if err := db.Save(&nextNode).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
 			return
@@ -93,7 +94,7 @@ func CreatePreviousNodeHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create node"})
 		return
 	}
-	if currentNode.PreviousNode != 0 {
+	if currentNode.PreviousNode != nil {
 		var previousNode database.Node
 		if err := db.Where("id = ?", currentNode.PreviousNode).First(&previousNode).Error; err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
@@ -105,7 +106,7 @@ func CreatePreviousNodeHandler(c *gin.Context, db *gorm.DB) {
 			return
 		}
 	}
-	currentNode.PreviousNode = newNode.ID
+	currentNode.PreviousNode = append(currentNode.PreviousNode, newNode.ID)
 	if err := db.Save(&currentNode).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
 		return
@@ -161,84 +162,6 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) {
 
 	}
 	c.JSON(http.StatusOK, graph)
-}
-
-// UpdateNodePreviousHandler godoc
-// @Summary Update the previous node of a specific node
-// @Description Update the previous node ID for the specified node
-// @Tags nodes
-// @Accept x-www-form-urlencoded
-// @Produce json
-// @Param nodeId formData int true "Node ID"
-// @Param nodePrevious formData int true "Previous Node ID"
-// @Success 200 {object} map[string]interface{} "Updated node"
-// @Failure 400 {object} map[string]interface{} "Invalid nodePreviousId"
-// @Failure 400 {object} map[string]interface{} "Node is not exist"
-// @Failure 500 {object} map[string]interface{} "Failed to update node"
-// @Router /nodes/previous [post]
-func UpdateNodePreviousHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodePreviousId"})
-		return
-	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
-		return
-	}
-	nodePreviousId := c.PostForm("nodePrevious")
-	nodePreviousIdInt, err := strconv.Atoi(nodePreviousId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodePreviousId"})
-		return
-	}
-	node.PreviousNode = nodePreviousIdInt
-	if err := db.Save(&node).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"Node": node})
-}
-
-// UpdateNodeNextHandler godoc
-// @Summary Update the next node of a specific node
-// @Description Update the next node ID for the specified node
-// @Tags nodes
-// @Accept x-www-form-urlencoded
-// @Produce json
-// @Param nodeId formData int true "Node ID"
-// @Param nodeNext formData int true "Next Node ID"
-// @Success 200 {object} map[string]interface{} "Updated node"
-// @Failure 400 {object} map[string]interface{} "Invalid nodeNextId"
-// @Failure 400 {object} map[string]interface{} "Node is not exist"
-// @Failure 500 {object} map[string]interface{} "Failed to update node"
-// @Router /nodes/next [post]
-func UpdateNodeNextHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodePreviousId"})
-		return
-	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
-		return
-	}
-	nodeNextId := c.PostForm("nodeNext")
-	nodeNextIdInt, err := strconv.Atoi(nodeNextId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodePreviousId"})
-		return
-	}
-	node.NextNode = nodeNextIdInt
-	if err := db.Save(&node).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"Node": node})
 }
 
 // UpdateNodeTitleHandler godoc
@@ -298,26 +221,47 @@ func DeleteNodeHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return
 	}
-	if node.PreviousNode != 0 {
-		var previousNode database.Node
-		if err := db.Where("id = ?", node.PreviousNode).First(&previousNode).Error; err == nil {
-			previousNode.NextNode = node.NextNode
-			if err := db.Save(&previousNode).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update previous node"})
+	if node.Type == "KeywordDecision" {
+		for _, rangeID := range node.Range {
+			var keywordDecision database.KeywordDecision
+			if err := db.Where("kw_decision_id = ?", rangeID).First(&keywordDecision).Error; err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Keyword decision is not exist"})
 				return
+			}
+			var nextNode database.Node
+			if err := db.Where("id = ?", keywordDecision.NextNode).First(&nextNode).Error; err == nil {
+				nextNode.PreviousNode = removeValue(nextNode.PreviousNode, node.ID)
+				if err := db.Save(&nextNode).Error; err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update previous node"})
+					return
+				}
+			}
+		}
+	} else {
+		if node.NextNode != 0 {
+			var nextNode database.Node
+			if err := db.Where("id = ?", node.NextNode).First(&nextNode).Error; err == nil {
+				nextNode.PreviousNode = removeValue(nextNode.PreviousNode, node.ID)
+				if err := db.Save(&nextNode).Error; err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update next node"})
+					return
+				}
 			}
 		}
 	}
-	if node.NextNode != 0 {
-		var nextNode database.Node
-		if err := db.Where("id = ?", node.NextNode).First(&nextNode).Error; err == nil {
-			nextNode.PreviousNode = node.PreviousNode
-			if err := db.Save(&nextNode).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update next node"})
-				return
+	if node.PreviousNode != nil {
+		for _, prevNodeID := range node.PreviousNode {
+			var prevNode database.Node
+			if err := db.Where("id = ?", prevNodeID).First(&prevNode).Error; err == nil {
+				prevNode.NextNode = 0
+				if err := db.Save(&prevNode).Error; err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update previous node"})
+					return
+				}
 			}
 		}
 	}
+
 	if err := db.Delete(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to delete node"})
 		return
@@ -376,8 +320,27 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 			"Messages": messageWithIndex,
 		})
 	case "QuickReply":
+		var quickReplies []database.QuickReply
+		if err := db.Where("node_id = ?", nodeID).Find(&quickReplies).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
+			return
+		}
+		var quickReplyWithIndex []struct {
+			Index      int
+			QuickReply database.QuickReply
+		}
+		for i, v := range quickReplies {
+			quickReplyWithIndex = append(quickReplyWithIndex, struct {
+				Index      int
+				QuickReply database.QuickReply
+			}{
+				Index:      i + 1,
+				QuickReply: v,
+			})
+		}
 		c.HTML(http.StatusOK, "quickReply.html", gin.H{
-			"nodeID": nodeID,
+			"Node":         node,
+			"QuickReplies": quickReplyWithIndex,
 		})
 	case "KeywordDecision":
 		var keywordDecisions []database.KeywordDecision

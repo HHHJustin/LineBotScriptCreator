@@ -25,7 +25,7 @@ func CreateLinkHandler(c *gin.Context, db *gorm.DB) {
 
 	var toNode database.Node
 	if err := db.Where("id = ?", req.ToNodeID).First(&toNode).Error; err == nil {
-		toNode.PreviousNode = req.FromNodeID
+		toNode.PreviousNode = append(toNode.PreviousNode, req.FromNodeID)
 		if err := db.Save(&toNode).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update toNode"})
 			return
@@ -52,7 +52,7 @@ func DeleteLinkHandler(c *gin.Context, db *gorm.DB) {
 
 	var toNode database.Node
 	if err := db.Where("id = ?", req.ToNodeID).First(&toNode).Error; err == nil {
-		toNode.PreviousNode = 0
+		toNode.PreviousNode = removeValue(toNode.PreviousNode, fromNode.ID)
 		if err := db.Save(&toNode).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update toNode"})
 			return

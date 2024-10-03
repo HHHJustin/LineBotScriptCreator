@@ -141,10 +141,11 @@
     <script type="module" src="/assets/branch.js"></script>
     <script type="module" src="/assets/keywordDecision.js"></script>
     <script type="module">
-        import { goToNode } from '/assets/nodeAction.js';
+        import { goToNode, makeTitleEditable } from '/assets/nodeAction.js';
         import { addBranch } from '/assets/branch.js';
         import { submitDeleteKWDecision, makeKeywordEditable } from '/assets/keywordDecision.js';
         window.goToNode = goToNode;
+        window.makeTitleEditable = makeTitleEditable;
         window.addBranch = addBranch;
         window.submitDeleteKWDecision = submitDeleteKWDecision;
         window.makeKeywordEditable = makeKeywordEditable;

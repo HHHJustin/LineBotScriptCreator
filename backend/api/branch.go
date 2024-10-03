@@ -28,7 +28,7 @@ func CreateBranchHandler(c *gin.Context, db *gorm.DB) {
 	newNode := node.(database.Node)
 	newNode.Title = "New"
 	newNode.Type = req.NewNodeType
-	newNode.PreviousNode = req.CurrentNodeID
+	newNode.PreviousNode = append(newNode.PreviousNode, req.CurrentNodeID)
 	newNode.NextNode = 0
 	newNode.LocX = currentNode.LocX + 100
 	newNode.LocY = len(currentNode.Range) * 100

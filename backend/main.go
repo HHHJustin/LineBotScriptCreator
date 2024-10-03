@@ -50,12 +50,6 @@ func main() {
 	nodeRouter.GET("/get/:nodeID/:nodeType", func(c *gin.Context) {
 		api.EditPageHandler(c, db)
 	})
-	nodeRouter.POST("/previous", func(c *gin.Context) {
-		api.UpdateNodePreviousHandler(c, db)
-	})
-	nodeRouter.POST("/next", func(c *gin.Context) {
-		api.UpdateNodeNextHandler(c, db)
-	})
 	nodeRouter.POST("/updatelocation", func(c *gin.Context) {
 		api.UpdateLocationHandler(c, db)
 	})

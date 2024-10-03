@@ -79,3 +79,26 @@ type KeywordDecisionUpdateRequest struct {
 	KeywordDecisionBaseRequest
 	Keyword string `json:"Keyword"`
 }
+
+/* Quick Reply */
+type QuickReplyBaseRequest struct {
+	QuickReplyID int `json:"quickReplyID,omitempty"`
+}
+
+type QuickReplyCreateRequest struct {
+	NodeBaseRequest
+	QuickReplyBaseRequest
+	ButtonName string `json:"buttonName" binding:"required"`
+	Reply      string `json:"reply" binding:"required"`
+}
+
+type QuickReplyDeleteRequest struct {
+	NodeBaseRequest
+	QuickReplyBaseRequest
+}
+
+type QuickReplyUpdateRequest struct {
+	QuickReplyBaseRequest
+	Field string `json:"field"`
+	Value string `json:"value"`
+}

@@ -27,7 +27,7 @@ type Node struct {
 	Title            string            `gorm:"size:255;not null"`
 	Type             string            `gorm:"size:255;not null"`
 	Range            IntArray          `gorm:"type:jsonb;not null"`
-	PreviousNode     int               `gorm:"index"`
+	PreviousNode     IntArray          `gorm:"type:jsonb;not null"`
 	NextNode         int               `gorm:"index"`
 	LocX             int               `gorm:"size:50;default:0" json:"locX"`
 	LocY             int               `gorm:"size:50;default:0" json:"locY"`

@@ -32,7 +32,7 @@ export function makeEditable(td, messageID) {
     input.focus();
 }
 
-export function submitDeleteMessage(event, messageID) {
+export function deleteMessage(event, messageID) {
     event.preventDefault();  
     const url = window.location.pathname;  
     const segments = url.split('/');  

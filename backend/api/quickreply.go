@@ -3,7 +3,6 @@ package api
 import (
 	"LineBotCreator/database"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -26,32 +25,34 @@ import (
 // @Failure 500 {object} map[string]interface{} "Failed to update node"
 // @Router /quickreplies/create [post]
 func CreateQuickReplyHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodeId"})
+	var req database.QuickReplyCreateRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
+	nodeId := req.CurrentNodeID
+	var node database.Node
+	if err := db.Where("id = ?", nodeId).First(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return
 	}
-
-	if node.Type != "quickreply" {
+	if node.Type != "QuickReply" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is wrong type"})
 		return
 	}
-	buttomName := c.PostForm("buttonName")
-	reply := c.PostForm("reply")
+	buttomName := req.ButtonName
+	reply := req.Reply
 	newQuickReply := database.QuickReply{
 		ButtonName: buttomName,
 		Reply:      reply,
-		NodeID:     nodeIdInt,
+		NodeID:     nodeId,
 	}
 	if err := db.Create(&newQuickReply).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Create QuickReply fail"})
 		return
+	}
+	if node.Range == nil {
+		node.Range = make([]int, 0)
 	}
 	node.Range = append(node.Range, newQuickReply.QuickReplyID)
 	if err := db.Save(&node).Error; err != nil {
@@ -81,40 +82,25 @@ func CreateQuickReplyHandler(c *gin.Context, db *gorm.DB) {
 // @Failure 500 {object} map[string]interface{} "Failed to update quick reply"
 // @Router /quickreplies/update [post]
 func UpdateQuickReplyHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodePreviousId"})
+	var req database.QuickReplyUpdateRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
-		return
-	}
-	if node.Type != "quickreply" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is wrong type"})
-		return
-	}
+	quickReplyId := req.QuickReplyID
 	var quickReply database.QuickReply
-	quickReplyId := c.PostForm("quickReplyId")
-	quickReplyIdInt, err := strconv.Atoi(quickReplyId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid quickReplyId"})
-		return
-	}
-	if !contains(node.Range, quickReplyIdInt) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "QuickReply ID does not exist in node range"})
-		return
-	}
-	if err := db.Where("quick_reply_id = ?", quickReplyIdInt).First(&quickReply).Error; err != nil {
+	if err := db.Where("quick_reply_id = ?", quickReplyId).First(&quickReply).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "QuickReply is not exist"})
 		return
 	}
-	newButtonName := c.PostForm("newButtonName")
-	newReply := c.PostForm("newReply")
-	quickReply.ButtonName = newButtonName
-	quickReply.Reply = newReply
+	if req.Field == "buttonName" {
+		quickReply.ButtonName = req.Value
+	} else if req.Field == "reply" {
+		quickReply.Reply = req.Value
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		return
+	}
 	if err := db.Save(&quickReply).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update message"})
 		return
@@ -139,25 +125,20 @@ func UpdateQuickReplyHandler(c *gin.Context, db *gorm.DB) {
 // @Failure 500 {object} map[string]interface{} "Failed to update node"
 // @Router /quickreplies/delete [post]
 func DeleteQuickReplyHandler(c *gin.Context, db *gorm.DB) {
-	var node database.Node
-	nodeId := c.PostForm("nodeId")
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid nodeId"})
+	var req database.QuickReplyDeleteRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
-	if err := db.Where("id = ?", nodeIdInt).First(&node).Error; err != nil {
+	nodeId := req.CurrentNodeID
+	var node database.Node
+	if err := db.Where("id = ?", nodeId).First(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return
 	}
 	var quickReply database.QuickReply
-	quickReplyId := c.PostForm("quickReplyId")
-	quickReplyIdInt, err := strconv.Atoi(quickReplyId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid quickReplyId"})
-		return
-	}
-	if err := db.Where("quick_reply_id = ?", quickReplyIdInt).First(&quickReply).Error; err != nil {
+	quickReplyId := req.QuickReplyID
+	if err := db.Where("quick_reply_id = ?", quickReplyId).First(&quickReply).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "QuickReply is not exist"})
 		return
 	}
@@ -165,7 +146,7 @@ func DeleteQuickReplyHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to delete QuickReply"})
 		return
 	}
-	node.Range = removeValue(node.Range, quickReplyIdInt)
+	node.Range = removeValue(node.Range, quickReplyId)
 	if err := db.Save(&node).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
 		return

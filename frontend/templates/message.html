@@ -107,7 +107,7 @@
                 <td>{{.Message.Type}}</td>
                 <td onclick="makeEditable(this, {{.Message.MessageID}})">{{.Message.Content}}</td>
                 <td>
-                    <form id="deleteMessageForm_{{.Message.MessageID}}" onsubmit="submitDeleteMessage(event, {{.Message.MessageID}})">
+                    <form id="deleteMessageForm_{{.Message.MessageID}}" onsubmit="deleteMessage(event, {{.Message.MessageID}})">
                         <button type="submit">Delete</button>
                     </form>
                 </td>
@@ -139,11 +139,11 @@
                 <script type="module" src="/assets/message.js"></script>
                 <script type="module">
                     import { goToNode, makeTitleEditable } from '/assets/nodeAction.js';
-                    import { makeEditable, submitDeleteMessage, submitMessage, updatePlaceholder } from '/assets/message.js';
+                    import { makeEditable, deleteMessage, submitMessage, updatePlaceholder } from '/assets/message.js';
                     window.goToNode = goToNode;
                     window.makeTitleEditable = makeTitleEditable;
                     window.makeEditable = makeEditable;
-                    window.submitDeleteMessage = submitDeleteMessage;
+                    window.deleteMessage = deleteMessage;
                     window.submitMessage = submitMessage;
                     window.updatePlaceholder = updatePlaceholder;
                 </script>
