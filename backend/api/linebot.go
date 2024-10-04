@@ -21,7 +21,27 @@ func CallbackHandler(c *gin.Context, bot *linebot.Client, db *gorm.DB) {
 	}
 	for _, event := range events {
 		switch event.Type {
+		case linebot.EventTypeFollow:
+			nextNode, err := addFriendHandler(event, db)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			gotoNextNode(nextNode, db, bot, event.Source.UserID)
+		case linebot.EventTypeJoin:
+		case linebot.EventTypeMessage:
+			switch message := event.Message.(type) {
+			case *linebot.TextMessage:
+				nextNode, err := checkMessageCondition(event, db, message)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+				gotoNextNode(nextNode, db, bot, event.Source.UserID)
 
+			default:
+				log.Printf("不支援的訊息類型: %T", message)
+			}
 		default:
 			log.Printf("不支援的事件類型: %s", event.Type)
 		}
