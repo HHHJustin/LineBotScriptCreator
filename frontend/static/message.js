@@ -87,6 +87,13 @@ export  function updatePlaceholder() {
     }
 }
 
+document.getElementById("messageContentInput").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();  
+        submitMessage();  
+    }
+});
+
 export async function submitMessage() {
     const { currentID } = getCurrentIDAndTypeFromURL(); 
     const currentIDInt = parseInt(currentID, 10);

@@ -22,6 +22,18 @@ func CreateLinkHandler(c *gin.Context, db *gorm.DB) {
 			return
 		}
 	}
+	switch fromNode.Type {
+	case "KeywordDecision":
+		keywordDecision := database.KeywordDecision{
+			NextNode: req.ToNodeID,
+			NodeID:   req.FromNodeID,
+		}
+		if err := db.Create(&keywordDecision).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Create Message fail"})
+			return
+		}
+		fromNode.Range = append(fromNode.Range, keywordDecision.KWDecisionID)
+	}
 
 	var toNode database.Node
 	if err := db.Where("id = ?", req.ToNodeID).First(&toNode).Error; err == nil {

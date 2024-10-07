@@ -118,7 +118,7 @@
             </tr>
             {{end}}
             <tr>
-                <form action="/messages/create" method="post">
+                <form action="/messages/create" method="post" onsubmit="return false;">
                     <td>New</td>
                     <td>
                         <select name="newMessageType" id="messageTypeSelect" required onchange="updatePlaceholder()">

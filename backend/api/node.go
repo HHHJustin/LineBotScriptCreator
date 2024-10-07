@@ -228,14 +228,17 @@ func DeleteNodeHandler(c *gin.Context, db *gorm.DB) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Keyword decision is not exist"})
 				return
 			}
-			var nextNode database.Node
-			if err := db.Where("id = ?", keywordDecision.NextNode).First(&nextNode).Error; err == nil {
-				nextNode.PreviousNode = removeValue(nextNode.PreviousNode, node.ID)
-				if err := db.Save(&nextNode).Error; err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update previous node"})
-					return
+			if keywordDecision.NextNode != 0 {
+				var nextNode database.Node
+				if err := db.Where("id = ?", keywordDecision.NextNode).First(&nextNode).Error; err == nil {
+					nextNode.PreviousNode = removeValue(nextNode.PreviousNode, node.ID)
+					if err := db.Save(&nextNode).Error; err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update previous node"})
+						return
+					}
 				}
 			}
+
 		}
 	} else {
 		if node.NextNode != 0 {

@@ -27,7 +27,7 @@ func CallbackHandler(c *gin.Context, bot *linebot.Client, db *gorm.DB) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			gotoNextNode(nextNode, db, bot, event.Source.UserID)
+			gotoNextNode(nextNode, db, bot, event)
 		case linebot.EventTypeJoin:
 		case linebot.EventTypeMessage:
 			switch message := event.Message.(type) {
@@ -37,7 +37,7 @@ func CallbackHandler(c *gin.Context, bot *linebot.Client, db *gorm.DB) {
 					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 					return
 				}
-				gotoNextNode(nextNode, db, bot, event.Source.UserID)
+				gotoNextNode(nextNode, db, bot, event)
 
 			default:
 				log.Printf("不支援的訊息類型: %T", message)
