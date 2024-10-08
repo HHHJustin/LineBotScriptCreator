@@ -21,7 +21,6 @@ import (
 // @description This is a sample server for Line Bot API.
 // @BasePath /
 func main() {
-	bot := utils.ConnectLineBot()
 	db := db.Connect()
 	router := gin.Default()
 	cwd, err := os.Getwd()
@@ -34,7 +33,19 @@ func main() {
 	router.LoadHTMLGlob(templatesPath)
 	router.Static("/assets", staticPath)
 	router.POST("/callback", func(c *gin.Context) {
+		bot := utils.ConnectLineBot(c, db)
+		if bot == nil {
+			return
+		}
 		api.CallbackHandler(c, bot, db)
+	})
+	// LineBot Channel
+	channelRouter := router.Group("/channel")
+	channelRouter.GET("/read", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "channel.html", nil)
+	})
+	channelRouter.POST("/create", func(c *gin.Context) {
+		api.CreateChannelInfo(c, db)
 	})
 	// Node
 	nodeRouter := router.Group("/nodes")
@@ -108,6 +119,9 @@ func main() {
 	})
 	messageRouter.POST("/delete", func(c *gin.Context) {
 		api.DeleteMessageHandler(c, db)
+	})
+	messageRouter.POST("/updateorder", func(c *gin.Context) {
+		api.UpdateMessageOrderHandler(c, db)
 	})
 
 	// Keyword Decision

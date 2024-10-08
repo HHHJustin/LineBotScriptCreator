@@ -293,22 +293,29 @@ func GetNodeTypeHandler(c *gin.Context, db *gorm.DB) {
 func EditPageHandler(c *gin.Context, db *gorm.DB) {
 	nodeID := c.Param("nodeID")
 	nodeType := c.Param("nodeType")
+
 	var node database.Node
 	if err := db.Where("id = ?", nodeID).First(&node).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
 		return
 	}
+
 	switch nodeType {
 	case "Message":
 		var messages []database.Message
-		if err := db.Where("node_id = ?", nodeID).Find(&messages).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
-			return
+		for _, id := range node.Range {
+			var message database.Message
+			if err := db.Where("message_id = ?", id).First(&message).Error; err == nil {
+				messages = append(messages, message)
+			} else {
+				fmt.Printf("Failed to fetch message with ID %d: %v\n", id, err)
+			}
 		}
 		var messageWithIndex []struct {
 			Index   int
 			Message database.Message
 		}
+
 		for i, v := range messages {
 			messageWithIndex = append(messageWithIndex, struct {
 				Index   int
@@ -322,6 +329,7 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 			"Node":     node,
 			"Messages": messageWithIndex,
 		})
+
 	case "QuickReply":
 		var quickReplies []database.QuickReply
 		if err := db.Where("node_id = ?", nodeID).Find(&quickReplies).Error; err != nil {

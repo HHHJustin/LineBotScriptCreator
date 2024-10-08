@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Line Bot Configuration</h1>
+    <form id="configForm">
+        <label for="channelSecret">Channel Secret Key:</label>
+        <input type="text" id="channelSecret" name="channelSecret" placeholder="Enter your Channel Secret Key" required>
+
+        <label for="channelToken">Channel Access Token:</label>
+        <input type="text" id="channelToken" name="channelToken" placeholder="Enter your Channel Access Token" required>
+
+        <button type="submit">Submit</button>
+    </form>
+    <div class="button-container">
+        <button onclick="goBackToNodes()">返回</button>
+    </div>
+    <script src="/assets/channel.js"></script>
+    <script>
+        function goBackToNodes() {
+        window.location.href = '/nodes/read';
+        }
+    </script>
+</body>
+</html>

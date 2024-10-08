@@ -1,5 +1,11 @@
 package database
 
+/* LineBot Channel */
+type ChannelRequest struct {
+	ChannelSecretKey   string `json:"channelSecretKey"`
+	ChannelAccessToken string `json:"channelAccessToken"`
+}
+
 /* Node */
 type NodeBaseRequest struct {
 	CurrentNodeID int `json:"currentNodeID,omitempty"`
@@ -58,11 +64,18 @@ type MessageCreateRequest struct {
 type MessageDeleteRequest struct {
 	NodeBaseRequest
 	MessageBaseRequest
+	MessageIndex int `json:"messageIndex"`
 }
 
 type MessageUpdateRequest struct {
 	MessageBaseRequest
 	MessageContent string `json:"messageContent"`
+}
+
+type MessageUpdateOrderRequest struct {
+	NodeBaseRequest
+	DraggedMessageIndex int `json:"draggedMessageIndex"`
+	NewIndex            int `json:"newIndex"`
 }
 
 /* Keyword Decision */

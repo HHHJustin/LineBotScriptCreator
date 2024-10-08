@@ -30,38 +30,97 @@
 	- Docker:開源平台，用於自動化應用程序的部署、擴展和管理。
 	- LineBot SDK: 用於開發 Line Bot 的開源軟體開發工具包，提供與 Line 平台的互動接口。提供豐富的 API 支持，能夠輕鬆實現推送訊息、回覆訊息等功能。
 
-# LineBot Execution Process
-1. 用戶觸發事件：用戶與 LineBot 互動時，會觸發不同的事件類型，如：
-	- 加入好友 (EventTypeFollow)
-	- 進入群組 (EventTypeJoin)
-	- 發送訊息 (EventTypeMessage)
-2. 事件接收：LineBot 接收到來自 LINE 平台的事件，這些事件包含用戶的 ID 及具體操作訊息。
-3. 事件類型處理：
-	- 加入好友事件 (EventTypeFollow)：
-		- 使用 addFriendHandler 函數處理用戶的添加好友操作，並獲取相應的下一個節點 ID。
-		- 更新用戶的會話狀態。
-	- 進入群組事件 (EventTypeJoin)：
-		- 根據需求進行特定的處理，例如發送歡迎訊息。
-	- 消息事件 (EventTypeMessage)：
-		- 根據用戶發送的訊息類型進行不同處理。
-		- 若為文本訊息，則進入 checkMessageCondition 函數進行關鍵字檢查。
-4. 消息處理：在checkMessageCondition 函數中，根據用戶當前的節點狀態進行檢查：
-	- 普通訊息:
-		- 當前節點類型為 "Message" 時，直接推送相應的訊息。
-	- 關鍵字決策:
-		- 當前節點為 "KeywordDecision"，根據用戶發送的文本訊息匹配關鍵字。
-		- 若匹配成功，返回相應的下一個節點 ID；否則不進行任何操作。
-	- 快速回覆:
-		當節點類型為 "QuickReply" 時，顯示快速回覆選項。
-5. 推送或回覆訊息：
-	- 根據判斷結果，使用 gotoNextNode 函數推送訊息或快速回覆給用戶。
-	- 更新用戶的當前節點 ID，以追蹤用戶的進度。
-6. 記錄和追蹤：	
-	- 所有用戶互動、節點狀態和時間戳等信息會持久化到資料庫中，以便後續的數據分析和用戶行為追蹤。
-7. 錯誤處理：
-	- 在執行過程中，如果發生任何錯誤，例如資料庫查詢失敗或發送訊息失敗，系統會進行錯誤記錄並返回相應的錯誤訊息。
+# 資料夾結構
+將Code分成Frontend以及Backend，以下是該項目的目錄結構及其說明：
+```
+.
+├── README.md                          # 項目的說明文件，包含項目介紹、使用方法及架構說明。
+├── backend 						   # 後端程式碼目錄
+│   ├── api                            # 存放所有 API 處理函數的目錄
+│   │   ├── branch.go                  # 處理與 branch 相關的邏輯
+│   │   ├── callback.go                # 處理 LineBot 的callback event
+│   │   ├── channel.go                 # 負責處理 LineBot channel 設定 
+│   │   ├── firstStep.go               # 處理LineBot的第一步(Add friend, Join group)
+│   │   ├── keywordDecision.go         # 處理關鍵字決策邏輯
+│   │   ├── link.go                    # 處理節點之間的連結邏輯
+│   │   ├── message.go                 # 處理訊息的 CRUD 操作
+│   │   ├── node.go                    # 處理節點的 CRUD 操作
+│   │   ├── quickReply.go              # 處理快速回覆邏輯
+│   │   └── utils.go                   # API相關工具型Function
+│   ├── database                       # 數據庫相關的操作
+│   │   ├── action.go                  # 數據庫操作相關功能
+│   │   ├── connect.go                 # 數據庫連接函數
+│   │   └── model.go                   # 數據模型定義
+│   ├── docs                           # 文檔和 Swagger 相關文件
+│   │   ├── docs.go                    # Swagger 文件的主體
+│   │   ├── swagger.json 		       # Swagger 的 JSON 格式文檔
+│   │   └── swagger.yaml               # Swagger 的 YAML 格式文檔
+│   ├── go.mod                         # Go 模塊
+│   ├── go.sum                         # Go 模塊的檢查和鎖定文件
+│   ├── main.go                        # 主入口文件
+│   └── utils                          # 工具型Function
+│       └── linebot.go                 # LineBot 相關工具
+├── docker-compose.yaml                # Docker Compose 文件，用於配置容器化環境
+├── frontend                           # 前端程式碼目錄
+│   ├── node_modules                   # 存放前端所需的 npm 模塊
+│   │   └── gojs                       # GoJS Function及其相關檔案
+│   │       ├── license.html
+│   │       ├── package.json
+│   │       ├── readme.md
+│   │       ├── release
+│   │       │   ├── go-debug-module.js
+│   │       │   ├── go-debug.d.ts
+│   │       │   ├── go-debug.js
+│   │       │   ├── go-debug.mjs
+│   │       │   ├── go-module.d.ts
+│   │       │   ├── go-module.js
+│   │       │   ├── go.d.ts
+│   │       │   ├── go.js
+│   │       │   └── go.mjs
+│   │       └── test
+│   │           ├── nodescript-default.mjs
+│   │           ├── nodescript-named.mjs
+│   │           ├── nodescript-namespace.mjs
+│   │           ├── nodescript-side-effect.mjs
+│   │           ├── nodescript.js
+│   │           └── package.json
+│   ├── package-lock.json              # npm 依賴鎖定文件
+│   ├── package.json                   # npm 依賴文件
+│   ├── static                         # 存放靜態資源（JS、CSS 檔案）
+│   │   ├── branch.js                  # 處理分支相關的前端邏輯
+│   │   ├── channel.js                 # 設定 channel 設定介面的前端邏輯
+│   │   ├── diagram.js                 # GoJS 圖表處理邏輯
+│   │   ├── drag.js                    # 拖曳功能的實現
+│   │   ├── fetchData.js               # 從後端獲取資料的功能
+│   │   ├── firstStep.js               # 處理第一步相關的前端邏輯
+│   │   ├── keywordDecision.js         # 處理關鍵字決策的前端邏輯
+│   │   ├── message.js                 # 處理訊息相關的前端邏輯
+│   │   ├── nodeAction.js              # 處理節點行為的前端邏輯
+│   │   ├── nodes.js                   # 管理節點的前端邏輯
+│   │   ├── quickReply.js              # 處理快速回覆的前端邏輯
+│   │   ├── styles.css                 # CSS 樣式文件
+│   │   ├── templates.js               # 處理模板的相關邏輯
+│   │   └── utils.js                   # 前端工具函數 
+│   └── templates                      # HTML 模板
+│       ├── channel.html
+│       ├── firstStep.html
+│       ├── keywordDecision.html
+│       ├── message.html
+│       ├── nodes.html
+│       ├── quickReply.html
+│       ├── random.html
+│       ├── tagDecision.html
+│       └── tagOperation.html
+└── images
+    ├── nodeFlow.png
+    └── userActionFlow.png
+
+```
 
 # LineBot Script Creator(LSC)
+## Server 基礎架設
+### Database connect
+
 ## Node - UI樣式
 為了實現彈性編輯遊戲劇本及關卡設置，程式中採用靈活的資料結構——鏈結串列（Linked List）。使用鏈結串列的好處包括：
 1. 動態大小：鏈結串列可以根據需要動態增減，不必提前分配固定的記憶體空間，這使得管理不同數量的劇本和關卡變得更加便利。
@@ -100,15 +159,11 @@ type Node struct {
 - Messages、QuickReplies、KeyDecisions、TagDecisions、Randoms: 這些屬性用於管理與節點相關的各種互動元素，包括訊息、快速回覆、關鍵決策等。
 這個結構的設計使得劇本中的每個節點都可以被靈活地定義和控制，支持不同遊戲情境下的需求。
 
-## Node Function 
-以下介紹Node的CRUD以及相關的Router path的功能，其中相關Function會分別坐落在：
-1. Frontend： nodes.html, nodes.js
-2. Backend：main.go, nodes.go
-
+## Node - Function 
 ### Node - Create
 1. CreateNodeMiddleware: 此中介件函數在創建新節點時初始化一個新的 Node 結構體，並將其存入上下文中以供後續處理。
 	- Router path: /nodes/create
-```
+```go
 func CreateNodeMiddleware(c *gin.Context) {
 	newNode := database.Node{
 		Title: "New",
@@ -128,7 +183,7 @@ func CreateNodeMiddleware(c *gin.Context) {
 		4. 設置新節點的各個屬性，包括前一個節點和下一個節點。
 		5. 將新節點存入資料庫。
 		6. 更新當前節點的下一個節點指向新創建的節點。
-```
+```go
 func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
@@ -141,7 +196,7 @@ func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 		4. 設置新節點的各個屬性，包括前一個節點和當前節點。
 		5. 將新節點存入資料庫。
 		6. 更新前一個節點的下一個節點指向新創建的節點。
-```
+```go
 func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
@@ -152,11 +207,10 @@ func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 		1. 查詢所有節點。
 		2. 根據每個節點的類型生成相應的圖形數據結構。
 		3. 返回包含節點和鏈接(Link)信息的 JSON 響應。
-```
+```go
 func ReadNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 	 
-
 ### Node - Update
 1. UpdateNodeTitleHandler: 此函數用於更新指定節點的標題。
 	- Router path: /nodes//title
@@ -165,7 +219,7 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 		2. 查詢指定 ID 的節點是否存在。
 		3. 更新節點的標題。
 		4. 返回更新後的節點信息。
-```
+```go
 func UpdateNodeTitleHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
@@ -176,7 +230,7 @@ func UpdateNodeTitleHandler(c *gin.Context, db *gorm.DB) { ... }
 		2. 查詢指定 ID 的節點是否存在。
 		3. 更新節點的位置。
 		4. 返回成功消息。
-```
+```go
 func UpdateLocationHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
@@ -188,8 +242,20 @@ func UpdateLocationHandler(c *gin.Context, db *gorm.DB) { ... }
 	2. 查詢指定 ID 的節點是否存在。
 	3. 根據節點的類型，處理相關的前後節點關係。
 	4. 刪除節點並返回成功消息。
-```
+```go
 func DeleteNodeHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
+### Node - Edit Node
+- EditPageHandler: 依據選擇節點的Type跳轉到對應的.html。
+	- Router path: /nodes/get/:nodeID/:nodeType
+	- 流程：
+	1. 從請求中綁定JSON數據。
+	2. 查詢指定 ID 的節點是否存在。
+	3. 檢查節點的Type，進到不同Event。
+	4. 取得節點資料後轉到對應.html。
+```go
+func EditPageHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
 ### Node - Frontend
@@ -199,35 +265,20 @@ func DeleteNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 	2. 設置節點模板。
 	3. 從後端獲取數據並填充到圖表中。
 	4. 監聽節點移動事件，當用戶移動節點時，更新其位置至後端。
+- 右鍵動作：
+	- 設定如果在節點上右鍵點擊，出現可執行動作，如下圖：
+		
+		<img src="images/ActionMenu.png" alt="ActionMenu" width="200"/>	
+	- 如果該動作是新增節點相關(Add Next Node, Add Previous Node...)，則會再出現要新增節點的種類。如下圖：
+		
+		<img src="images/AddNodeMenu.png" alt="ActionMenu" width="200"/>	
+	- 點選Edit可跳轉至對應Type的HTML檔。
+- 節點位置紀錄：
+	- 使用 addDiagramListener("SelectionMoved") 事件監聽節點的移動，當節點被移動後，會將新的位置 (LocX, LocY) 傳送至後端的 /nodes/updatelocation API。這樣能夠在每次節點移動後自動更新並儲存至資料庫，確保節點位置的變更能夠即時反映並保存。
 
-## UserSession 結構體
-除了節點結構，還需要對每個使用者進行管理，以記錄他們在遊戲中的狀態。以下是 UserSession 的定義：
-```
-type UserSession struct {
-	Index     int    `gorm:"primaryKey;autoIncrement"` // 使用者紀錄的唯一索引，自動增量
-	UserID    string `gorm:"size:255;not null"`        // 使用者的唯一識別碼
-	CurrentID int    `gorm:"not null"`                 // 使用者目前所在的節點 ID
-	Time      time.Time                                // 記錄上次互動發生的時間
-}
-```
-結構體字段說明：
-- Index: 此字段作為使用者紀錄的唯一索引，並設置為自動增量。
-- UserID: 用於標識使用者，確保每個使用者的數據是唯一且可追溯的。
-- CurrentID: 記錄使用者目前所在的節點位置，便於追蹤使用者的進度。
-- Time: 互動發生的時間，用於追溯和分析使用者的行為。
-UserSession 結構可以幫助管理每個使用者的進度，確保玩家在遊戲過程中的體驗能夠被持續記錄和查找。
-
-### User 行為流程圖示
-執行流程為：
-1. 使用者輸入資訊或執行動作。
-2. 到User Tabel中依據UserID查詢目前使用者所在Node。
-3. 再到對應的Node中查詢。
-4. 依據當前Node的Type以及Range來取得對應的Response。
-![userActionFlow](images/userActionFlow.png)
-
-## Message
+## Message  - 結構體
 Message 結構體用於管理訊息的基本信息，並確保每條訊息能夠正確對應到其所在的節點。
-```
+```go
 type Message struct {
 	MessageID int    `gorm:"primaryKey;autoIncrement"`
 	Type      string `gorm:"size:255;not null"`
@@ -243,9 +294,16 @@ type Message struct {
 - NodeID: 此字段用於關聯到相應的節點，確保每個訊息都能對應到正確的節點，且此字段為必填項並建立索引。
 - Node: 透過 NodeID 來建立與 Node 結構的關聯，當節點更新或刪除時，會自動進行相應的操作（如更新或刪除）。
 
-## QuickReply
+## Message - Function
+### Message - Create
+### Message - Read
+### Message - Update
+### Message - Delete
+### Message - Frontend
+
+## QuickReply - 結構體
 QuickReply 結構體用於管理快速回覆的基本信息，讓使用者能夠快速選擇預設的回覆選項。
-```
+```go
 type QuickReply struct {
 	QuickReplyID int    `gorm:"primaryKey;autoIncrement"`
 	ButtonName   string `gorm:"size:255;not null"`
@@ -259,10 +317,16 @@ type QuickReply struct {
 - ButtonName: 快速回覆按鈕的顯示名稱，用於前端展示。
 - Reply: 按鈕被點擊後所傳送的回覆內容。
 - NodeID: 與相應的節點關聯，確保快速回覆能正確對應到特定的節點。
+## QuickReply - Function
+### QuickReply - Create
+### QuickReply - Read
+### QuickReply - Update
+### QuickReply - Delete
+### QuickReply - Frontend
 
-## Keyword Decision
+## Keyword Decision - 結構體
 Keyword Decision 結構體用於管理關鍵字決策的基本信息，以便在用戶輸入的訊息中進行關鍵字匹配。
-```
+```go
 type KeywordDecision struct {
 	DecisionID int    `gorm:"primaryKey;autoIncrement"`
 	Keyword    string `gorm:"size:255;not null"`
@@ -276,3 +340,74 @@ type KeywordDecision struct {
 - Keyword: 用於進行關鍵字匹配的字串，必填項。
 - NextNode: 匹配成功後，轉向的下一個節點 ID。
 - NodeID: 關聯到對應的節點，確保關鍵字決策與正確的節點連結。
+## Keyword Decision - Function
+### Keyword Decision - Create
+### Keyword Decision - Read
+### Keyword Decision - Update
+### Keyword Decision - Delete
+### QKeyword Decision - Frontend
+
+
+# LineBot Backend Program
+## LineBot - Connect
+
+## LineBot Execution Process
+1. 用戶觸發事件：用戶與 LineBot 互動時，會觸發不同的事件類型，如：
+	- 加入好友 (EventTypeFollow)
+	- 進入群組 (EventTypeJoin)
+	- 發送訊息 (EventTypeMessage)
+2. 事件接收：LineBot 接收到來自 LINE 平台的事件，這些事件包含用戶的 ID 及具體操作訊息。
+3. 事件類型處理：
+	- 加入好友事件 (EventTypeFollow)：
+		- 使用 addFriendHandler 函數處理用戶的添加好友操作，並獲取相應的下一個節點 ID。
+		- 更新用戶的會話狀態。
+	- 進入群組事件 (EventTypeJoin)：
+		- 根據需求進行特定的處理，例如發送歡迎訊息。
+	- 消息事件 (EventTypeMessage)：
+		- 根據用戶發送的訊息類型進行不同處理。
+		- 若為文本訊息，則進入 checkMessageCondition 函數進行關鍵字檢查。
+4. 消息處理：在checkMessageCondition 函數中，根據用戶當前的節點狀態進行檢查：
+	- 普通訊息:
+		- 當前節點類型為 "Message" 時，直接推送相應的訊息。
+	- 關鍵字決策:
+		- 當前節點為 "KeywordDecision"，根據用戶發送的文本訊息匹配關鍵字。
+		- 若匹配成功，返回相應的下一個節點 ID；否則不進行任何操作。
+	- 快速回覆:
+		當節點類型為 "QuickReply" 時，顯示快速回覆選項。
+5. 推送或回覆訊息：
+	- 根據判斷結果，使用 gotoNextNode 函數推送訊息或快速回覆給用戶。
+	- 更新用戶的當前節點 ID，以追蹤用戶的進度。
+6. 記錄和追蹤：	
+	- 所有用戶互動、節點狀態和時間戳等信息會持久化到資料庫中，以便後續的數據分析和用戶行為追蹤。
+7. 錯誤處理：
+	- 在執行過程中，如果發生任何錯誤，例如資料庫查詢失敗或發送訊息失敗，系統會進行錯誤記錄並返回相應的錯誤訊息。
+
+## User - 結構體
+除了Node結構，還需要對每個使用者進行管理，以記錄他們在遊戲中的狀態。以下是 UserSession 的定義：
+```go
+type UserSession struct {
+	Index     int    `gorm:"primaryKey;autoIncrement"` // 使用者紀錄的唯一索引，自動增量
+	UserID    string `gorm:"size:255;not null"`        // 使用者的唯一識別碼
+	CurrentID int    `gorm:"not null"`                 // 使用者目前所在的節點 ID
+	Time      time.Time                                // 記錄上次互動發生的時間
+}
+```
+結構體字段說明：
+- Index: 此字段作為使用者紀錄的唯一索引，並設置為自動增量。
+- UserID: 用於標識使用者，確保每個使用者的數據是唯一且可追溯的。
+- CurrentID: 記錄使用者目前所在的節點位置，便於追蹤使用者的進度。
+- Time: 互動發生的時間，用於追溯和分析使用者的行為。
+UserSession 結構可以幫助管理每個使用者的進度，確保玩家在遊戲過程中的體驗能夠被持續記錄和查找。
+
+## User - 執行流程
+執行流程為：
+1. 使用者輸入資訊或執行動作。
+2. 到User Tabel中依據UserID查詢目前使用者所在Node。
+3. 再到對應的Node中查詢。
+4. 依據當前Node的Type以及Range來取得對應的Response。
+![userActionFlow](images/userActionFlow.png)
+
+## User - Function
+### User - Message Event
+### User - QuickReply Event
+### User - Keyword Decision Event

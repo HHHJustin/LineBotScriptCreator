@@ -46,9 +46,14 @@ export function deleteMessage(event, messageID) {
         console.error("Node ID is not a valid number.");
         return;
     }
+    const messageRow = event.target.closest('tr'); 
+    const indexCell = messageRow.querySelector('td:first-child'); 
+    const messageIndex = indexCell.textContent; 
+    const messageIndexInt = parseInt(messageIndex, 10); 
     const data = {
         messageID: messageID,
-        currentNodeID: currentIDInt
+        currentNodeID: currentIDInt,
+        messageIndex: messageIndexInt
     };
     console.log(data)
     fetch('/messages/delete', {
@@ -130,5 +135,57 @@ export async function submitMessage() {
 
     } catch (error) {
         console.error('Error:', error);
+    }
+}
+
+let draggedRow = null;
+
+export function dragStart(event) {
+    draggedRow = event.target.closest('tr'); 
+    event.dataTransfer.effectAllowed = "move";
+}
+
+export function allowDrop(event) {
+    event.preventDefault();  
+}
+
+export function drop(event) {
+    event.preventDefault();
+    const { currentID } = getCurrentIDAndTypeFromURL(); 
+    const currentIDInt = parseInt(currentID, 10);
+    const dropTargetRow = event.target.closest('tr'); 
+    if (dropTargetRow && draggedRow && draggedRow !== dropTargetRow) {
+        const tbody = document.getElementById("messageTableBody");
+        const rows = Array.from(tbody.querySelectorAll("tr[draggable='true']"));
+        const draggedMessageIndex = rows.indexOf(draggedRow); 
+        const newIndex = rows.indexOf(dropTargetRow);
+
+        var data = {
+            currentNodeID: currentIDInt,
+            draggedMessageIndex: draggedMessageIndex, 
+            newIndex: newIndex, 
+        };
+
+        console.log(data);
+        fetch('/messages/updateorder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update message order');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Order updated successfully:', data);
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error updating message order:', error);
+        });
     }
 }

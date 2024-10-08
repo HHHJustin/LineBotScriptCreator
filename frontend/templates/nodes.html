@@ -45,16 +45,22 @@
 </head>
 <body>
   <header>
-    <h1>LineBot Script Creator</h1>
-    <button class="header-button" onclick="goToFirstStep()">Edit First Step</button>
+    <h1 style="flex-grow: 1;">LineBot Script Creator</h1> 
+    <!-- flex-grow: 1 使 h1 元素佔據剩餘空間，讓按鈕保持在右側 -->
+    <div>
+      <button class="header-button" onclick="goToFirstStep()">Edit First Step</button>
+      <button class="header-button" onclick="goToChannel()">Edit LineBot Channel</button>
+    </div>
   </header>
   <div id="myDiagramDiv"></div>
 
   <script type="module"src="/assets/nodes.js"></script>
   <script>
-    
     function goToFirstStep() {
       window.location.href = '/firststep/read';
+    }
+    function goToChannel() {
+      window.location.href = '/channel/read';
     }
   </script>
 </body>

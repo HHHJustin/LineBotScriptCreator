@@ -98,6 +98,41 @@ func UpdateMessageHandler(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, gin.H{"message": "Message updated successfully"})
 }
 
+func UpdateMessageOrderHandler(c *gin.Context, db *gorm.DB) {
+	var req database.MessageUpdateOrderRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		return
+	}
+	var node database.Node
+	nodeId := req.CurrentNodeID
+	if err := db.Where("id = ?", nodeId).First(&node).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Node is not exist"})
+		return
+	}
+	rangeLen := len(node.Range)
+	if req.DraggedMessageIndex < 0 || req.DraggedMessageIndex >= rangeLen || req.NewIndex < 0 || req.NewIndex >= rangeLen {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Index out of range"})
+		return
+	}
+	temp := node.Range[req.DraggedMessageIndex]
+	if req.DraggedMessageIndex < req.NewIndex {
+		for i := req.DraggedMessageIndex; i < req.NewIndex; i++ {
+			node.Range[i] = node.Range[i+1]
+		}
+	} else if req.DraggedMessageIndex > req.NewIndex {
+		for i := req.DraggedMessageIndex; i > req.NewIndex; i-- {
+			node.Range[i] = node.Range[i-1]
+		}
+	}
+	node.Range[req.NewIndex] = temp
+	if err := db.Save(&node).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update node"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Order updated successfully"})
+}
+
 // DeleteMessage godoc
 // @Summary Delete a message by ID
 // @Description Delete a specific message associated with a node using its ID

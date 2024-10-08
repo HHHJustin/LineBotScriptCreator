@@ -114,3 +114,8 @@ type FirstStep struct {
 	Type        string `gorm:"size:255;not null"`
 	NextNode    int    `gorm:"not null"`
 }
+
+type LineBotChannelSetting struct {
+	ChannelSecretKey   string `gorm:"size:255;not null"`
+	ChannelAccessToken string `gorm:"type:text;not null"`
+}

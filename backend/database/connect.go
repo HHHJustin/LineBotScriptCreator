@@ -37,6 +37,7 @@ func Connect() *gorm.DB {
 		&Tag{},
 		&UserSession{},
 		&FirstStep{},
+		&LineBotChannelSetting{},
 	)
 	if err != nil {
 		log.Fatalf("failed to migrate database schema: %v", err)
