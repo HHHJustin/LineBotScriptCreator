@@ -332,14 +332,19 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 
 	case "QuickReply":
 		var quickReplies []database.QuickReply
-		if err := db.Where("node_id = ?", nodeID).Find(&quickReplies).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
-			return
+		for _, id := range node.Range {
+			var quickReply database.QuickReply
+			if err := db.Where("quick_reply_id = ?", id).First(&quickReply).Error; err == nil {
+				quickReplies = append(quickReplies, quickReply)
+			} else {
+				fmt.Printf("Failed to fetch quickReply with ID %d: %v\n", id, err)
+			}
 		}
 		var quickReplyWithIndex []struct {
 			Index      int
 			QuickReply database.QuickReply
 		}
+
 		for i, v := range quickReplies {
 			quickReplyWithIndex = append(quickReplyWithIndex, struct {
 				Index      int
@@ -349,6 +354,7 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) {
 				QuickReply: v,
 			})
 		}
+
 		c.HTML(http.StatusOK, "quickReply.html", gin.H{
 			"Node":         node,
 			"QuickReplies": quickReplyWithIndex,

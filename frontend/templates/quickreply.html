@@ -103,9 +103,9 @@
                 <th>Action</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="messageTableBody">
             {{ range .QuickReplies }}
-            <tr>
+            <tr draggable="true" ondragstart="dragStart(event)" ondrop="drop(event)" ondragover="allowDrop(event)" data-id="{{.QuickReply.QuickReplyID}}">
                 <td>{{ .Index }}</td>
                 <td onclick="makeQuickReplyEditable(this, {{ .QuickReply.QuickReplyID }}, 'buttonName')">{{ .QuickReply.ButtonName }}</td>
                 <td onclick="makeQuickReplyEditable(this, {{ .QuickReply.QuickReplyID }}, 'reply')">{{ .QuickReply.Reply }}</td>
@@ -133,13 +133,16 @@
     </div>
     <script type="module" src="/assets/nodeAction.js"></script>
     <script type="module">
-        import { goToNode, makeTitleEditable } from '/assets/nodeAction.js';
+        import { goToNode, makeTitleEditable, dragStart, allowDrop, drop } from '/assets/nodeAction.js';
         import { addQuickReply, deleteQuickReply, makeQuickReplyEditable} from '/assets/quickreply.js'
         window.goToNode = goToNode;
         window.makeTitleEditable = makeTitleEditable;
         window.addQuickReply = addQuickReply;
         window.deleteQuickReply = deleteQuickReply;
         window.makeQuickReplyEditable = makeQuickReplyEditable;
+        window.dragStart = dragStart;
+        window.allowDrop = allowDrop;
+        window.drop = drop;
     </script>
     <script>
         function goBackToNodes() {
