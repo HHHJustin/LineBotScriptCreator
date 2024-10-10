@@ -1,5 +1,10 @@
 {
+  "name": "gojs-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "http-server ./ -p 3000"
+  },
   "dependencies": {
-    "gojs": "^3.0.11"
+    "http-server": "^14.1.1"
   }
 }

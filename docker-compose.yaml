@@ -1,23 +1,53 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres
+    image: postgres:17
     container_name: postgres_yaya
     environment:
-      POSTGRES_USER: yaya
-      POSTGRES_PASSWORD: zxcv4567
-      POSTGRES_DB: LineBotScript
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     networks:
       - my_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./frontend/templates:/app/templates
+      - ./frontend/static:/app/static
+    networks:
+      - my_network
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app  # 將本地 frontend 目錄掛載到容器中
+    command: npm start
+    networks:
+      - my_network
 
 networks:
   my_network:
     driver: bridge
 
 volumes:
-  postgres_data:
+  postgres_data: {}  # 應該是一個空字典映射，確保格式正確

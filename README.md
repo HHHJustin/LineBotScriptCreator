@@ -345,7 +345,7 @@ type KeywordDecision struct {
 ### Keyword Decision - Read
 ### Keyword Decision - Update
 ### Keyword Decision - Delete
-### QKeyword Decision - Frontend
+### Keyword Decision - Frontend
 
 
 # LineBot Backend Program

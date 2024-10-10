@@ -15,6 +15,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
 	HOST := os.Getenv("HOST")
 	DBUSER := os.Getenv("DBUSER")
 	DBPASSWORD := os.Getenv("DBPASSWORD")

@@ -4,10 +4,7 @@ import (
 	"LineBotCreator/api"
 	db "LineBotCreator/database"
 	"LineBotCreator/utils"
-	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	_ "LineBotCreator/docs"
 
@@ -23,12 +20,9 @@ import (
 func main() {
 	db := db.Connect()
 	router := gin.Default()
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	templatesPath := filepath.Join(cwd, "..", "frontend", "templates", "*")
-	staticPath := filepath.Join(cwd, "..", "frontend", "static")
+
+	templatesPath := "templates/*" // 使用相對路徑
+	staticPath := "static"
 
 	router.LoadHTMLGlob(templatesPath)
 	router.Static("/assets", staticPath)
@@ -146,7 +140,7 @@ func main() {
 	})
 	// Swagger ui
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	if err := router.Run(":3000"); err != nil {
+	if err := router.Run(":8080"); err != nil {
 		panic(err)
 	}
 }
