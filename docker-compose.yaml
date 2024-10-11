@@ -3,31 +3,23 @@ services:
     image: postgres:17
     container_name: postgres_yaya
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: LineBotScript
+      POSTGRES_USER: yaya
+      POSTGRES_PASSWORD: zxcv4567
     ports:
       - "5432:5432"
     networks:
       - my_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
     build:
       context: ./backend
-    env_file:
-      - .env
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     volumes:
       - ./frontend/templates:/app/templates
       - ./frontend/static:/app/static
