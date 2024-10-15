@@ -72,6 +72,7 @@ func addFriendHandler(event *linebot.Event, db *gorm.DB) (int, error) {
 
 func gotoNextNode(nextNode int, db *gorm.DB, bot *linebot.Client, event *linebot.Event) error {
 	var user database.UserSession
+	var replyMessages []linebot.SendingMessage
 	userID := event.Source.UserID
 	replyToken := event.ReplyToken
 	if err := db.Where("user_id = ?", userID).First(&user).Error; err != nil {
@@ -82,23 +83,17 @@ func gotoNextNode(nextNode int, db *gorm.DB, bot *linebot.Client, event *linebot
 		if err := db.Where("id = ?", nextNode).First(&next).Error; err != nil {
 			return fmt.Errorf("failed to fetch next node: %v", err)
 		}
-
 		user.CurrentID = nextNode
 		switch next.Type {
 		case "Message":
-			var messages []database.Message
-			if err := db.Where("node_id = ?", next.ID).Find(&messages).Error; err != nil {
-				return fmt.Errorf("failed to fetch messages for node: %v", err)
-			}
-			var replyMessages []linebot.SendingMessage
-			for _, message := range messages {
+			for _, nodeRange := range next.Range {
+				var message database.Message
+				if err := db.Where("node_id = ? AND message_id = ?", next.ID, nodeRange).Find(&message).Error; err != nil {
+					return fmt.Errorf("failed to fetch messages for node: %v", err)
+				}
 				replyMessages = append(replyMessages, linebot.NewTextMessage(message.Content))
 			}
-			if _, err := bot.ReplyMessage(replyToken, replyMessages...).Do(); err != nil {
-				return fmt.Errorf("failed to reply message to user: %v", err)
-			}
 			nextNode = next.NextNode
-
 		case "QuickReply":
 			user.CurrentID = next.NextNode
 			var quickReplies []database.QuickReply
@@ -114,10 +109,10 @@ func gotoNextNode(nextNode int, db *gorm.DB, bot *linebot.Client, event *linebot
 				))
 			}
 
-			quickReply := linebot.NewQuickReplyItems(quickReplyItems...)
-			message := linebot.NewTextMessage(next.Title).WithQuickReplies(quickReply)
-			if _, err := bot.ReplyMessage(replyToken, message).Do(); err != nil {
-				return fmt.Errorf("failed to send quick reply to user: %v", err)
+			if len(quickReplyItems) > 0 {
+				quickReply := linebot.NewQuickReplyItems(quickReplyItems...)
+				message := linebot.NewTextMessage(next.Title).WithQuickReplies(quickReply)
+				replyMessages = append(replyMessages, message)
 			}
 			nextNode = 0
 
@@ -127,9 +122,15 @@ func gotoNextNode(nextNode int, db *gorm.DB, bot *linebot.Client, event *linebot
 		default:
 			return fmt.Errorf("unsupported node type: %s", next.Type)
 		}
+		if err := db.Save(&user).Error; err != nil {
+			return fmt.Errorf("failed to update user session: %v", err)
+		}
 	}
-	if err := db.Save(&user).Error; err != nil {
-		return fmt.Errorf("failed to update user session: %v", err)
+	if len(replyMessages) > 0 {
+		if _, err := bot.ReplyMessage(replyToken, replyMessages...).Do(); err != nil {
+			fmt.Println(err)
+			return fmt.Errorf("failed to reply message to user: %v", err)
+		}
 	}
 	return nil
 }
@@ -175,7 +176,8 @@ func checkMessageCondition(event *linebot.Event, db *gorm.DB, message linebot.Me
 			}
 		}
 		return node.ID, nil
-
+	case "FirstStep":
+		return node.NextNode, nil
 	default:
 		return 0, fmt.Errorf("unsupported node type: %s", node.Type)
 	}
