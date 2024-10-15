@@ -5,6 +5,13 @@
 
 受到某密室逃脫業者的委託，我希望能開發一款簡單易用的 LineBot 劇本製作工具，後續稱為 LineBot Script Creator (LSC)，並搭配製作相應的 LineBot 後端程式，希望能降低使用 LineBot 機器人的成本。
 
+# Explaination
+以下README.md主要講解實作概念以及程式上所使用到的資料結構與執行流程，如果需要實際操作或是在製作上所碰到的問題，請參考下面連結。
+- 操作手冊
+[連結](https://hackmd.io/pfDxStMhQIyuE74XYKtZ8A)
+- 製作上遇到的問題
+[連結](https://hackmd.io/6b8n4QP0QEOVyGZc1PBZ3A)
+
 # Objectives
 ## LineBot Script Creator(LSC)
 1. 建立編輯劇本的頁面。
@@ -28,7 +35,7 @@
 	- PostgreSQL:是一個功能強大且開源的關聯型資料庫管理系統。具備高擴展性，適合處理大型應用的數據存儲需求。
 4. Other:
 	- Docker:開源平台，用於自動化應用程序的部署、擴展和管理。
-	- LineBot SDK: 用於開發 Line Bot 的開源軟體開發工具包，提供與 Line 平台的互動接口。提供豐富的 API 支持，能夠輕鬆實現推送訊息、回覆訊息等功能。
+	- LineBot SDK: 用於開發 LineBot 的開源軟體開發工具包，提供與 Line 平台的互動接口。提供豐富的 API 支持，能夠輕鬆實現推送訊息、回覆訊息等功能。
 
 # 資料夾結構
 將Code分成Frontend以及Backend，以下是該項目的目錄結構及其說明：
@@ -46,7 +53,7 @@
 │   │   ├── message.go                 # 處理訊息的 CRUD 操作
 │   │   ├── node.go                    # 處理節點的 CRUD 操作
 │   │   ├── quickReply.go              # 處理快速回覆邏輯
-│   │   └── utils.go                   # API相關工具型Function
+│   │   └── utils.go                   # API相關工具型函數
 │   ├── database                       # 數據庫相關的操作
 │   │   ├── action.go                  # 數據庫操作相關功能
 │   │   ├── connect.go                 # 數據庫連接函數
@@ -58,12 +65,12 @@
 │   ├── go.mod                         # Go 模塊
 │   ├── go.sum                         # Go 模塊的檢查和鎖定文件
 │   ├── main.go                        # 主入口文件
-│   └── utils                          # 工具型Function
+│   └── utils                          # 工具型函數
 │       └── linebot.go                 # LineBot 相關工具
 ├── docker-compose.yaml                # Docker Compose 文件，用於配置容器化環境
 ├── frontend                           # 前端程式碼目錄
 │   ├── node_modules                   # 存放前端所需的 npm 模塊
-│   │   └── gojs                       # GoJS Function及其相關檔案
+│   │   └── gojs                       # GoJS 函數及其相關檔案
 │   │       ├── license.html
 │   │       ├── package.json
 │   │       ├── readme.md
@@ -120,8 +127,52 @@
 # LineBot Script Creator(LSC)
 ## Server 基礎架設
 ### Database connect
+- Connect: 用於建立與 PostgreSQL 資料庫的連接。該函數將從 .env 檔案中讀取資料庫的連接設定，並使用 GORM 來開啟資料庫連接。
+	- 返回值：返回一個指向 GORM 的資料庫連接實例。
+	- 錯誤處理：
+	如果無法載入 .env 檔案，則記錄錯誤並終止程式。
+	如果無法連接到資料庫，則記錄錯誤並終止程式。
+	如果資料庫模式遷移失敗，則記錄錯誤並終止程式。
+```go 
+func Connect() *gorm.DB { ... }
+```
+### Server setting
+- main: 用於初始化伺服器，並設定路由及中介層。它會呼叫 Connect 函數以建立資料庫連接，然後設定 Gin 路由器。
+	- 使用 gin.Default() 創建一個 Gin 路由器實例。
+	- 使用 LoadHTMLGlob 方法加載 HTML 模板，並設置靜態資源的路徑。
+```go 
+func main() { ... }
+```
+- Router setting
+	- LINE Bot Callback：
+		- Router：/callback
+		- Function：接收 LINE Bot 的事件並處理。
+	- LineBot channel設定：
+		- Router：/channel
+		- Function：讀取和創建 LINE Bot 頻道設定。
+	- Nodes管理：
+		- Router：/nodes
+		- Function：管理Nodes的讀取、更新、創建和刪除操作。
+	- Message管理：
+		- Router：/messages
+		- Function：處理訊息的創建、更新和刪除。
+	- Quick Reply管理：
+		- Router：/quickreplies
+		- Function：管理快速回覆的創建、更新和刪除。
+	- Keyword Decision管理：
+		- Router：/keywordDecisions
+		- Function：管理關鍵字決策的創建、更新和刪除。
 
-## Node - UI樣式
+- Swagger UI
+使用 Swagger 生成 API 文檔的界面，以便於開發和測試。
+```go 
+router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+```
+	
+- 啟動伺服器
+使用 router.Run(":8080") 啟動伺服器，監聽 8080 端口。
+
+## Node - Concept
 為了實現彈性編輯遊戲劇本及關卡設置，程式中採用靈活的資料結構——鏈結串列（Linked List）。使用鏈結串列的好處包括：
 1. 動態大小：鏈結串列可以根據需要動態增減，不必提前分配固定的記憶體空間，這使得管理不同數量的劇本和關卡變得更加便利。
 2. 插入與刪除效率高：在鏈結串列中，插入和刪除節點的操作時間複雜度為 O(1)，這比起陣列在中間位置插入或刪除需要 O(n) 的時間更具優勢。
@@ -130,8 +181,8 @@
 ![nodeFlow](images/nodeFlow.png)
 上圖表示，每個Node之間由箭頭表示下一個Node、也就是指向下一個LineBot的動作。
 
-## Node - 結構體
-以下是Node結構體的定義，這是遊戲劇本編輯系統中用來表示每個劇本節點的重要數據結構
+## Node - Structure
+以下是Node Structure的定義，這是遊戲劇本編輯系統中用來表示每個劇本節點的重要數據結構
 ```go
 type Node struct {
 	ID           int           `gorm:"primaryKey;autoIncrement"` // 節點的唯一識別碼，自動增量
@@ -149,7 +200,7 @@ type Node struct {
 	Randoms      []Random      `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // 隨機選項
 }
 ```
-結構體字段說明：
+Structure字段說明：
 - ID: 節點的唯一識別碼，採用自動增量的方式確保唯一性。
 - Title: 節點的標題，用於描述節點的基本信息。
 - Type: 節點的類型，描述節點的具體用途。
@@ -161,7 +212,7 @@ type Node struct {
 
 ## Node - Function 
 ### Node - Create
-1. CreateNodeMiddleware: 此中介件函數在創建新節點時初始化一個新的 Node 結構體，並將其存入上下文中以供後續處理。
+- CreateNodeMiddleware: 此中介件函數在創建新節點時初始化一個新的 Node Structure，並將其存入上下文中以供後續處理。
 	- Router path: /nodes/create
 ```go
 func CreateNodeMiddleware(c *gin.Context) {
@@ -174,7 +225,7 @@ func CreateNodeMiddleware(c *gin.Context) {
 }
 ```
 
-2. CreateNextNodeHandler: 此函數用於根據當前節點創建下一個節點。
+- CreateNextNodeHandler: 此函數用於根據當前節點創建下一個節點。
 	- Router path: /nodes/create/next
 	- 流程:
 		1. 從上下文中獲取節點數據。
@@ -187,7 +238,7 @@ func CreateNodeMiddleware(c *gin.Context) {
 func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
-3. CreatePreviousNodeHandler: 此函數用於根據當前節點創建前一個節點。
+- CreatePreviousNodeHandler: 此函數用於根據當前節點創建前一個節點。
 	- Router path: /nodes/create/previous
 	- 流程:
 		1. 從上下文中獲取節點數據。
@@ -201,7 +252,7 @@ func CreateNextNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
 ### Node - Read
-1. ReadNodeHandler: 此函數用於讀取所有節點並返回節點及其關聯信息。GoJS需要有節點以及鏈接(Link)兩個部分才能形成點與點之間以箭頭相連接。
+- ReadNodeHandler: 此函數用於讀取所有節點並返回節點及其關聯信息。GoJS需要有節點以及鏈接(Link)兩個部分才能形成點與點之間以箭頭相連接。
 	- Router path: /nodes/read
 	- 流程:
 		1. 查詢所有節點。
@@ -212,7 +263,7 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 	 
 ### Node - Update
-1. UpdateNodeTitleHandler: 此函數用於更新指定節點的標題。
+- UpdateNodeTitleHandler: 此函數用於更新指定節點的標題。
 	- Router path: /nodes//title
 	- 流程:
 		1. 從請求中綁定 JSON 數據。
@@ -223,7 +274,7 @@ func ReadNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 func UpdateNodeTitleHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
-2.  UpdateLocationHandler: 此函數用於更新節點的位置 (LocX, LocY)。
+-  UpdateLocationHandler: 此函數用於更新節點的位置 (LocX, LocY)。
 	- Router path: /nodes/nodes/updatelocation
 	- 流程:
 		1. 從請求中綁定 JSON 數據。
@@ -258,7 +309,7 @@ func DeleteNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 func EditPageHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
-### Node - Frontend
+## Node - Frontend Setting
 在nodes.html中，引入GoJS的功能，並設置事件監聽器以便於進行頁面間的跳轉。並於nodes.js中設定init()來初始化GoJS圖表和設置節點模板。
 - GoJS init()流程：
 	1. 創建圖表實例。
@@ -276,18 +327,24 @@ func EditPageHandler(c *gin.Context, db *gorm.DB) { ... }
 - 節點位置紀錄：
 	- 使用 addDiagramListener("SelectionMoved") 事件監聽節點的移動，當節點被移動後，會將新的位置 (LocX, LocY) 傳送至後端的 /nodes/updatelocation API。這樣能夠在每次節點移動後自動更新並儲存至資料庫，確保節點位置的變更能夠即時反映並保存。
 
-## Message  - 結構體
-Message 結構體用於管理訊息的基本信息，並確保每條訊息能夠正確對應到其所在的節點。
+## Message - Concept
+在遊戲劇本編輯系統中，訊息（Message）用於與玩家進行交互，提供故事情節、提示或遊戲指示。訊息不僅可以是文字，還可以包含圖片或其他格式的內容。透過靈活的訊息管理，玩家的遊戲體驗將變得更加生動和引人入勝。使用訊息的好處包括：
+1. 多樣性：可以使用不同類型的訊息（如文字、圖片或 FlexMessage），使得互動更為豐富。
+2. 靈活性：訊息可以根據遊戲進度或玩家行為動態更新，提供個性化的遊戲體驗。
+3. 結構化：每條訊息與其所在的節點相關聯，便於管理和編輯。
+
+## Message - Structure
+Message Structure用於管理訊息的基本信息，並確保每條訊息能夠正確對應到其所在的節點。
 ```go
 type Message struct {
-	MessageID int    `gorm:"primaryKey;autoIncrement"`
-	Type      string `gorm:"size:255;not null"`
-	Content   string `gorm:"type:text;not null"`
-	NodeID    int    `gorm:"not null;index"`
-	Node      Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	MessageID int    `gorm:"primaryKey;autoIncrement"` // 每條訊息的唯一標識，自動增量
+	Type      string `gorm:"size:255;not null"`        // 訊息的類型，例如 Text、Image、FlexMessage
+	Content   string `gorm:"type:text;not null"`       // 訊息的內容
+	NodeID    int    `gorm:"not null;index"`           // 與相應節點的關聯ID
+	Node      Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // 與 Node 結構的關聯
 }
 ```
-結構體字段說明：
+Structure字段說明：
 - MessageID: 此字段作為每個訊息的唯一標識，設置為主鍵並自動增量。
 - Type: 用於指定訊息的類型，最大長度為255個字符，且此字段為必填項，用來區分Text、Image、FlexMessage等幾種種類的Message。
 - Content: 訊息的內容，使用文本類型存儲，並設置為必填項。
@@ -296,60 +353,219 @@ type Message struct {
 
 ## Message - Function
 ### Message - Create
+- CreateMessageMiddleware: 此中介函數用於創建新的訊息，並將其存入上下文中以供後續處理。
+	- Router path: /messages/create
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取訊息創建請求。
+		2. 查詢指定的節點是否存在。
+		3. 確保節點類型為 "Message"。
+		4. 創建新的訊息並保存到資料庫中。
+		5. 更新節點的範圍，以包含新創建的訊息 ID。
+```go
+func CreateMessageHandler(c *gin.Context, db *gorm.DB) { ... }
+```
 ### Message - Read
-### Message - Update
-### Message - Delete
-### Message - Frontend
+- ReadMessagesHandler: 此函數用於讀取所有訊息並返回它們及其關聯信息。
+	- Router path:  /messages/read
+	- 流程:
+		1. 查詢所有訊息。
+		2. 返回包含訊息信息的 JSON 響應。
+```go
+func ReadMessagesHandler(c *gin.Context, db *gorm.DB) { ... }
+```
 
-## QuickReply - 結構體
-QuickReply 結構體用於管理快速回覆的基本信息，讓使用者能夠快速選擇預設的回覆選項。
+### Message - Update
+- UpdateMessageHandler: 此函數用於根據 ID 更新訊息的內容。
+	- Router path: /messages/update
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取訊息更新請求。
+		2. 查詢指定 ID 的訊息是否存在。
+		3. 更新訊息的內容。
+		4. 返回更新後的訊息信息。
+```go
+func UpdateMessageHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
+- UpdateMessageOrderHandler: 此函數用於更新訊息的順序。
+	- 路由路徑: /messages/updateorder
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取更新順序請求。
+		2. 查詢當前節點是否存在。
+		3. 根據拖曳的索引更新訊息的順序。
+		4. 返回成功消息。
+```go
+func UpdateMessageOrderHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
+### Message - Delete
+- DeleteMessageHandler: 此函數用於刪除指定 ID 的訊息。
+	- Router path: /messages/delete
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取訊息刪除請求。
+		2. 查詢指定 ID 的訊息是否存在。
+		3. 刪除訊息並返回成功消息。
+```go
+func DeleteMessageHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+## Message - Frontend Setting
+
+## QuickReply - Concept
+在遊戲劇本編輯系統中，快速回覆（Quick Reply）功能使得玩家可以迅速選擇預設的回覆選項，進一步提升互動性和遊戲體驗。快速回覆通常與特定的節點（Node）相關聯，使得用戶在遊玩過程中能夠方便地選擇適當的回覆內容。使用快速回覆的好處包括：
+1. 高效率：使用者可以快速回覆，不必手動輸入，節省時間。
+2. 互動性：玩家的選擇會影響遊戲進程，增強遊戲的互動性和參與感。
+3. 設計靈活性：開發者可以根據遊戲需求設計不同的快速回覆選項，以滿足不同場景的需求。
+
+## QuickReply - Structure
+QuickReply Structure用於管理快速回覆的基本信息，讓使用者能夠快速選擇預設的回覆選項。
 ```go
 type QuickReply struct {
-	QuickReplyID int    `gorm:"primaryKey;autoIncrement"`
-	ButtonName   string `gorm:"size:255;not null"`
-	Reply        string `gorm:"type:text;not null"`
-	NodeID       int    `gorm:"not null;index"`
-	Node         Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	QuickReplyID int    `gorm:"primaryKey;autoIncrement"` // 每個快速回覆的唯一標識，自動增量
+	ButtonName   string `gorm:"size:255;not null"`        // 快速回覆按鈕的顯示名稱
+	Reply        string `gorm:"type:text;not null"`       // 按鈕被點擊後所傳送的回覆內容
+	NodeID       int    `gorm:"not null;index"`           // 與相應的節點關聯
+	Node         Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // 與 Node 結構的關聯
 }
 ```
-結構體字段說明：
+Structure字段說明：
 - QuickReplyID: 每個快速回覆的唯一標識，設置為主鍵並自動增量。
 - ButtonName: 快速回覆按鈕的顯示名稱，用於前端展示。
 - Reply: 按鈕被點擊後所傳送的回覆內容。
 - NodeID: 與相應的節點關聯，確保快速回覆能正確對應到特定的節點。
 ## QuickReply - Function
 ### QuickReply - Create
-### QuickReply - Read
-### QuickReply - Update
-### QuickReply - Delete
-### QuickReply - Frontend
+- CreateQuickReplyHandler: 此函數用於為特定節點創建新的快速回覆。
+	- Router path: /quickreplies/create
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取快速回覆創建請求。
+		2. 查詢指定的節點是否存在。
+		3. 確保節點類型為 "QuickReply"。
+		4. 創建新的快速回覆並保存到資料庫中。
+		5. 更新節點的範圍，以包含新創建的快速回覆 ID。
+```go
+func CreateQuickReplyHandler(c *gin.Context, db *gorm.DB) { ... }
+```
 
-## Keyword Decision - 結構體
-Keyword Decision 結構體用於管理關鍵字決策的基本信息，以便在用戶輸入的訊息中進行關鍵字匹配。
+### QuickReply - Read
+- ReadQuickRepliesHandler: 此函數用於讀取所有快速回覆並返回它們及其關聯信息。
+	- Router path: /quickreplies/read
+	- 流程:
+		1. 查詢所有快速回覆。
+		2. 返回包含快速回覆信息的 JSON 響應。
+```go
+func ReadQuickRepliesHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
+### QuickReply - Update
+- UpdateQuickReplyHandler: 此函數用於根據 ID 更新快速回覆的按鈕名稱和回覆內容。
+	- Router path: /quickreplies/update
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取快速回覆更新請求。
+		2. 查詢指定 ID 的快速回覆是否存在。
+		3. 更新快速回覆的按鈕名稱和回覆內容。
+		4. 返回更新後的快速回覆信息。
+```go
+func UpdateQuickReplyHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
+### QuickReply - Delete
+- DeleteQuickReplyHandler: 此函數用於刪除指定 ID 的快速回覆。
+	- Router path: /quickreplies/delete
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取快速回覆刪除請求。
+		2. 查詢指定 ID 的快速回覆是否存在。
+		3. 刪除快速回覆並返回成功消息。
+```go
+func DeleteQuickReplyHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
+## QuickReply - Frontend
+
+## Keyword Decision - Concept
+關鍵字決策（Keyword Decision）是用於管理用戶輸入的訊息中的關鍵字匹配，以便根據用戶的輸入決定下一步的操作或轉向的節點。這一功能對於提升遊戲的互動性和用戶體驗至關重要，因為它使得用戶能夠根據自己的選擇進行更靈活的互動。
+
+## Keyword Decision - Structure
+Keyword Decision Structure用於管理關鍵字決策的基本信息，以便在用戶輸入的訊息中進行關鍵字匹配。
 ```go
 type KeywordDecision struct {
-	DecisionID int    `gorm:"primaryKey;autoIncrement"`
-	Keyword    string `gorm:"size:255;not null"`
-	NextNode   int    `gorm:"not null;index"`
-	NodeID     int    `gorm:"not null;index"`
-	Node       Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DecisionID int    `gorm:"primaryKey;autoIncrement"` // 每個關鍵字決策的唯一標識，自動增量
+	Keyword    string `gorm:"size:255;not null"`        // 用於進行關鍵字匹配的字串，必填項
+	NextNode   int    `gorm:"not null;index"`           // 匹配成功後轉向的下一個節點 ID
+	NodeID     int    `gorm:"not null;index"`           // 關聯到對應的節點
+	Node       Node   `gorm:"foreignKey:NodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // 與 Node 結構的關聯
 }
 ```
-結構體字段說明：
+Structure字段說明：
 - DecisionID: 每個關鍵字決策的唯一標識，設置為主鍵並自動增量。
 - Keyword: 用於進行關鍵字匹配的字串，必填項。
 - NextNode: 匹配成功後，轉向的下一個節點 ID。
 - NodeID: 關聯到對應的節點，確保關鍵字決策與正確的節點連結。
 ## Keyword Decision - Function
 ### Keyword Decision - Create
+- CreateKWDecisionHandler: 此函數用於為特定節點創建新的關鍵字決策。
+	- Router path: /keyworddecisions/create
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取關鍵字決策創建請求。
+		2. 查詢指定的節點是否存在。
+		3. 創建新的關鍵字決策並保存到資料庫中。
+		4. 更新節點的範圍，以包含新創建的關鍵字決策 ID。
+```go
+func CreateKWDecisionHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
 ### Keyword Decision - Read
+- ReadKWDecisionsHandler: 此函數用於讀取所有關鍵字決策並返回它們及其關聯信息。
+	- Router path: /keyworddecisions/read
+	- 流程:
+		1. 查詢所有關鍵字決策。
+		2. 返回包含關鍵字決策信息的 JSON 響應。
+```go
+func ReadKWDecisionsHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
 ### Keyword Decision - Update
+- UpdateKWDecisionHandler: 此函數用於根據 ID 更新關鍵字決策的內容。
+	- Router path: /keyworddecisions/update
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取關鍵字決策更新請求。
+		2. 查詢指定 ID 的關鍵字決策是否存在。
+		3. 更新關鍵字決策的內容。
+		4. 返回更新後的關鍵字決策信息。
+```go 
+func UpdateKWDecisionHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
 ### Keyword Decision - Delete
+- DeleteKWDecisionHandler: 此函數用於刪除指定 ID 的關鍵字決策。
+	- Router path: /keyworddecisions/delete
+	- 流程:
+		1. 從請求中綁定 JSON 數據以獲取關鍵字決策刪除請求。
+		2. 查詢指定 ID 的關鍵字決策是否存在。
+		3. 刪除關鍵字決策並返回成功消息。
+```go
+func DeleteKWDecisionHandler(c *gin.Context, db *gorm.DB) { ... }
+```
+
 ### Keyword Decision - Frontend
 
 
 # LineBot Backend Program
 ## LineBot - Connect
+- ConnectLineBot: 用於連接 LINE Bot，並返回一個 linebot.Client 的實例，以便後續與 LINE Messaging API 進行互動。該函數首先會從資料庫中讀取 LINE Bot 的頻道設定，然後根據設定建立 LINE Bot 客戶端。
+	- 處理流程
+		1. 讀取頻道設定：
+			- 函數首先嘗試從資料庫中讀取 LineBotChannelSetting 的記錄。
+			- 若資料庫中找不到相關的設定，則返回 nil，並渲染 channel.html 頁面，提示用戶進行設定。
+		2. 建立 LINE Bot 客戶端：
+			- 若成功讀取到設定，則使用頻道的 ChannelSecretKey 和 ChannelAccessToken 建立 LINE Bot 客戶端。
+			- 若在建立過程中發生錯誤，則記錄錯誤並返回 nil。
+		3. 返回 LINE Bot 客戶端：
+			- 若成功建立客戶端，則返回該客戶端實例，以便用於後續的訊息發送和接收。
+	- 錯誤處理
+		1. 如果資料庫中未找到任何頻道設定，函數會渲染 channel.html 頁面以供用戶填寫設定資訊。
+		2. 如果在建立 LINE Bot 客戶端時發生錯誤，則會記錄該錯誤，但不會顯示於用戶界面，這可能需要後續的錯誤處理機制來提升用戶體驗。
+```go
+func ConnectLineBot(c *gin.Context, db *gorm.DB) *linebot.Client{ ... }
+```
 
 ## LineBot Execution Process
 1. 用戶觸發事件：用戶與 LineBot 互動時，會觸發不同的事件類型，如：
@@ -382,7 +598,7 @@ type KeywordDecision struct {
 7. 錯誤處理：
 	- 在執行過程中，如果發生任何錯誤，例如資料庫查詢失敗或發送訊息失敗，系統會進行錯誤記錄並返回相應的錯誤訊息。
 
-## User - 結構體
+## User - Structure
 除了Node結構，還需要對每個使用者進行管理，以記錄他們在遊戲中的狀態。以下是 UserSession 的定義：
 ```go
 type UserSession struct {
@@ -392,7 +608,7 @@ type UserSession struct {
 	Time      time.Time                                // 記錄上次互動發生的時間
 }
 ```
-結構體字段說明：
+Structure字段說明：
 - Index: 此字段作為使用者紀錄的唯一索引，並設置為自動增量。
 - UserID: 用於標識使用者，確保每個使用者的數據是唯一且可追溯的。
 - CurrentID: 記錄使用者目前所在的節點位置，便於追蹤使用者的進度。
@@ -407,7 +623,29 @@ UserSession 結構可以幫助管理每個使用者的進度，確保玩家在�
 4. 依據當前Node的Type以及Range來取得對應的Response。
 ![userActionFlow](images/userActionFlow.png)
 
-## User - Function
+## User - Event
 ### User - Message Event
+- 當用戶發送訊息時，系統會接收該事件並進行處理。具體流程如下：
+	1. 接收事件：系統透過 CallbackHandler 解析 LINE Bot 的請求，獲取事件資料。
+	2. 事件類型判斷：若事件類型為 linebot.EventTypeMessage，則進入處理訊息的流程。
+	3. 訊息類型處理：根據訊息的類型（例如文字訊息），進行不同的處理：
+		- 對於文字訊息，系統會調用 checkMessageCondition 來檢查用戶發送的內容是否符合某些條件（例如關鍵字決策）。
+		- 若符合條件，則決定下一個要執行的節點。
 ### User - QuickReply Event
+- 當用戶選擇快速回覆時，流程如下：
+	1. 接收事件：系統在 CallbackHandler 中捕捉 linebot.EventTypeMessage 事件，並判斷是否為快速回覆。
+	2. 快速回覆處理：當用戶選擇快速回覆選項時，系統會直接根據選擇的快速回覆觸發相應的節點。
+	3. 更新用戶狀態：系統會更新用戶的當前節點 ID，以便追蹤用戶的進程。
 ### User - Keyword Decision Event
+- 關鍵字決策事件的處理過程如下：
+	1. 接收事件：在 CallbackHandler 中，檢測到用戶發送的訊息類型。
+	2. 檢查關鍵字：當用戶的訊息與已設定的關鍵字匹配時，系統將判斷並引導用戶到相應的下一個節點。
+	3. 流程控制：若匹配成功，系統會更新用戶狀態，讓用戶跳轉到新節點，並執行對應的操作。
+### CallbackHandler
+CallbackHandler 是處理所有 LINE Bot 事件的核心函數。其工作流程如下：
+1. 解析請求：從 LINE 的 webhook 接收到事件後，解析請求以獲取事件列表。
+2. 事件分發：根據事件類型（如跟隨、加入、訊息等）進行分類處理。
+3. 事件執行：針對每種事件類型，調用相應的處理函數（例如 addFriendHandler 處理跟隨事件，gotoNextNode 處理節點跳轉）。
+
+# Next Step
+1. 加入FirstStep
