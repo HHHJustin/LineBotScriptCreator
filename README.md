@@ -31,6 +31,7 @@
 	- Golang:語法簡潔，開發效率高，能夠快速構建穩定的應用程序且具有良好的並發處理能力，適合處理高流量的請求。
 	- Gin:是一個用 Go 語言編寫的輕量級Web框架，專注於高性能和簡單性。
 	- Gorm:是一個 ORM（物件關聯對映）庫，用於簡化 Go 語言中的資料庫操作。支持多種資料庫（如 MySQL、PostgreSQL），方便資料庫切換。
+	- Nginx:用來處理反向代理及https憑證。
 3. Database: 
 	- PostgreSQL:是一個功能強大且開源的關聯型資料庫管理系統。具備高擴展性，適合處理大型應用的數據存儲需求。
 4. Other:
@@ -309,23 +310,52 @@ func DeleteNodeHandler(c *gin.Context, db *gorm.DB) { ... }
 func EditPageHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
-## Node - Frontend Setting
+## Node - Frontend 
 在nodes.html中，引入GoJS的功能，並設置事件監聽器以便於進行頁面間的跳轉。並於nodes.js中設定init()來初始化GoJS圖表和設置節點模板。
 - GoJS init()流程：
 	1. 創建圖表實例。
 	2. 設置節點模板。
 	3. 從後端獲取數據並填充到圖表中。
 	4. 監聽節點移動事件，當用戶移動節點時，更新其位置至後端。
+
+![nodesPage](images/nodesPage.png)	
+	- 使用顏色來區分表示不同種類的node。
+	- 用箭頭表示不同node之間的關聯性，從Node A指向Node B表示Node A執行完動作之後執行Node B。
+	- 搭配後面LineBot Backend中的user_sessions紀錄目前使用者所在的Node。
+	- URL旁顯示此頁面有經過https認證。
+
 - 右鍵動作：
 	- 設定如果在節點上右鍵點擊，出現可執行動作，如下圖：
 		
 		<img src="images/ActionMenu.png" alt="ActionMenu" width="200"/>	
-	- 如果該動作是新增節點相關(Add Next Node, Add Previous Node...)，則會再出現要新增節點的種類。如下圖：
+	- 如果該動作是新增節點相關(Add Next Node, Add Previous Node, Add Branch...)，則會再出現要新增節點的種類。如下圖：
 		
 		<img src="images/AddNodeMenu.png" alt="ActionMenu" width="200"/>	
+	- Add Link：先按下Add Link(From)紀錄此點，再按下Add Link(To)設定其下一個Node動作，建立兩個Node之間的連結。
+	- Add Node & Branch：使用Add Node是代表該點下一個Node不會有分歧，比方説：Message, QuickReply這樣的Node，而Add Branch則是給後面可能會有分歧的Node使用，比方說：Keyword Decision。
 	- 點選Edit可跳轉至對應Type的HTML檔。
 - 節點位置紀錄：
 	- 使用 addDiagramListener("SelectionMoved") 事件監聽節點的移動，當節點被移動後，會將新的位置 (LocX, LocY) 傳送至後端的 /nodes/updatelocation API。這樣能夠在每次節點移動後自動更新並儲存至資料庫，確保節點位置的變更能夠即時反映並保存。
+- Edit Setting：
+	- Edit First Step：點下按鈕後頁面會跳轉到firstStep.html，用來編輯add friend或是join group等動作。
+	- Edit LineBot Channel：點下按鈕後頁面會跳轉到channel.html，用來設定LineBot channel的Access Token及Secret Key。
+
+![editList](images/editList.png)	
+
+### FirstStep
+設定LineBot的起點，比方說加入LineBot好友或是LineBot加入Group後會前往哪個Node的位置。
+![firstStepPage](images/firstStepPage.png)
+其中頁面中會顯示的資料有： 
+- First Step Info.：
+	- Index：First Step的編號。
+	- First Step Type：Add Friend, Join Group...等。
+	- NextNode：點選NextNode可以前往下一個Node的頁面，如果沒有下一個則會顯示No NextNode。
+- 返回：返回nodes.html頁面。
+
+### LineBot Channel
+LineBot Connect時需要LineBot channel Access Token ＆ LineBot channel Secret Key才能完成連結以及認證。
+![channelPage](images/channelPage.png)
+將LineBot中的LineBot channel Access Token ＆ LineBot channel Secret Key填入對應的框框中，按下submit將會把這兩筆資訊存入Database中，在後續使用LineBot時，就會把Database中的資訊抓取出來使用。
 
 ## Message - Concept
 在遊戲劇本編輯系統中，訊息（Message）用於與玩家進行交互，提供故事情節、提示或遊戲指示。訊息不僅可以是文字，還可以包含圖片或其他格式的內容。透過靈活的訊息管理，玩家的遊戲體驗將變得更加生動和引人入勝。使用訊息的好處包括：
@@ -407,7 +437,23 @@ func UpdateMessageOrderHandler(c *gin.Context, db *gorm.DB) { ... }
 ```go
 func DeleteMessageHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
-## Message - Frontend Setting
+## Message - Frontend 
+用來編輯Message種類的Node內容。渲染HTML前會先從Database中，messages的Table抓取對應資料。
+![messagePage](images/messagePage.png)	
+其中頁面中會顯示的資料有：
+- Node相關資訊(ID, Title, Type, NextNode, PreviousNode)。
+- Node功能：
+	- Title可更新內容。
+	- 點選NextNode可以前往下一個Node的頁面，如果沒有下一個則會顯示No NextNode。 
+- Message List Table：
+	- Index：Reply message的順序。
+	- Message Type：Text, Image, FlexMessage等。
+	- Content：輸入內容。
+- Table功能：
+	- 輸入Message Type及Content後可以按下Add在此Node新增一筆資料。
+	- 可以拖曳Table中的表格來更換Message Index順序。
+	- Content可更新內容。
+- 返回：返回nodes.html頁面。
 
 ## QuickReply - Concept
 在遊戲劇本編輯系統中，快速回覆（Quick Reply）功能使得玩家可以迅速選擇預設的回覆選項，進一步提升互動性和遊戲體驗。快速回覆通常與特定的節點（Node）相關聯，使得用戶在遊玩過程中能夠方便地選擇適當的回覆內容。使用快速回覆的好處包括：
@@ -479,6 +525,22 @@ func DeleteQuickReplyHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
 ## QuickReply - Frontend
+用來編輯QuickReply種類的Node內容。渲染HTML前會先從Database中，quick_replies的Table抓取對應資料。
+![quickReplyPage](images/quickReplyPage.png)
+其中頁面中會顯示的資料有：
+- Node相關資訊(ID, QuickReplyTitle, Type, NextNode, PreviousNode)。
+- Node功能：
+	- QuickReplyTitle可更新內容。且此Title這邊用來表示顯示QuickReply Button前的Reply message。
+	- 點選NextNode可以前往下一個Node的頁面。如果沒有下一個則會顯示No NextNode。 
+- QuickReply List Table：
+	- Index：QuickReply的順序。
+	- Button Name：QuickReply Button上的文字敘述。
+	- Reply：按下Button後對應的回覆。
+- Table功能：
+	- 輸入Button Name及Reply後可以按下Add在此Node新增一筆資料。
+	- 可以拖曳Table中的表格來更換QuickReply Index順序。
+	- Button Name及Reply可更新內容。
+- 返回：返回nodes.html頁面。
 
 ## Keyword Decision - Concept
 關鍵字決策（Keyword Decision）是用於管理用戶輸入的訊息中的關鍵字匹配，以便根據用戶的輸入決定下一步的操作或轉向的節點。這一功能對於提升遊戲的互動性和用戶體驗至關重要，因為它使得用戶能夠根據自己的選擇進行更靈活的互動。
@@ -546,7 +608,22 @@ func DeleteKWDecisionHandler(c *gin.Context, db *gorm.DB) { ... }
 ```
 
 ### Keyword Decision - Frontend
-
+用來編輯Keyword Decision種類的Node內容。渲染HTML前會先從Database中，keyword_decisions的Table抓取對應資料。
+![keywordDecisionPage](images/keywordDecisionPage.png)
+其中頁面中會顯示的資料有：
+- Node相關資訊(ID, Node Title, Type, PreviousNode)。
+- Node功能：
+	- Node Title可更新內容。
+- Keyword Decision List Table：
+	- Index：Keyword Decision的順序。
+	- Type：輸入此Keyword的NextNode種類。
+	- Keyword：觸發的關鍵字。 
+	- NextNode：連結到下一個Node的頁面按鈕。
+- Table功能：
+	- 輸入Message Type後可以按下Add在此Node新增一筆資料。
+	- Keyword可更新內容。
+- 返回：返回nodes.html頁面。
+- 如果需要設定後續Node的連結需要從nodes.html設定。
 
 # LineBot Backend Program
 ## LineBot - Connect
@@ -648,4 +725,11 @@ CallbackHandler 是處理所有 LINE Bot 事件的核心函數。其工作流程
 3. 事件執行：針對每種事件類型，調用相應的處理函數（例如 addFriendHandler 處理跟隨事件，gotoNextNode 處理節點跳轉）。
 
 # Next Step
-1. 加入FirstStep
+- 可改善：
+	1. Node 類別中的 Previous Node：由於最初未考慮到一個節點可能擁有多個輸入，後續為了解決此問題，將 Previous Node 改為陣列的形式。然而，這樣的變更使得在多個 Previous Node 的情況下，不知應返回哪一個 Node，目前尚未想到解決方案，因此「Go Previous」按鈕在頁面上暫時沒有作用。
+	2. 前端 UI 需要細緻化：目前的前端設計大多依賴 ChatGPT 輔助完成，某些頁面的使用體驗不夠友好，例如訊息拖曳會影響到內容輸入，節點之間的箭頭連接也顯得不夠整齊。這些問題將在未來的前端程式研究中逐步改善。
+- 預計新增:
+	1. Message加入Image, FirstStep功能。
+	2. Node加入Tag, Tag Decision, Special Keyword, Join Group。
+	3. 加入登入系統，使用者只能使用自己本身設定的Node。
+	4. 目前只能操作一個channel的劇本編輯，未來規劃可同時建立多個channel劇本編輯系統。
